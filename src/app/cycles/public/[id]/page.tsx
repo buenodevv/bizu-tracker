@@ -143,6 +143,19 @@ async function PublicCycleBody({
           </Button>
         </CardContent>
       </Card>
+
+      <footer className="text-muted-foreground/70 flex flex-col items-center gap-1 pt-2 pb-4 text-xs">
+        <p>© 2026 Rodrigo Bueno</p>
+        <p>
+          Dúvidas e sugestões:{" "}
+          <a
+            href="mailto:rodrigojbueno@yahoo.com.br"
+            className="hover:text-foreground underline-offset-2 transition-colors hover:underline"
+          >
+            rodrigojbueno@yahoo.com.br
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }

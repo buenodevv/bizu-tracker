@@ -146,6 +146,12 @@ supabase/migrations/           # SQL versionado
 | `npm run lint` | ESLint |
 | `npx tsc --noEmit` | checagem de tipos |
 
+## Autor
+
+**Rodrigo Bueno**
+
+- Dúvidas e sugestões: [rodrigojbueno@yahoo.com.br](mailto:rodrigojbueno@yahoo.com.br)
+
 ## Licença
 
-[MIT](LICENSE)
+[MIT](LICENSE) — © 2026 Rodrigo Bueno

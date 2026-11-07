@@ -31,10 +31,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <aside className="bg-sidebar text-sidebar-foreground hidden w-60 shrink-0 flex-col border-r md:flex">
         <Brand />
         <MainNav />
-        <div className="mt-auto p-4">
+        <div className="mt-auto flex flex-col gap-1 border-t p-4">
           <p className="text-muted-foreground text-xs">
             Bizu Tracker · v0.1
           </p>
+          <p className="text-muted-foreground/70 text-[11px] leading-tight">
+            © 2026 Rodrigo Bueno
+          </p>
+          <a
+            href="mailto:rodrigojbueno@yahoo.com.br"
+            className="text-muted-foreground/70 hover:text-foreground text-[11px] leading-tight underline-offset-2 transition-colors hover:underline"
+          >
+            Dúvidas e sugestões
+          </a>
         </div>
       </aside>
 
