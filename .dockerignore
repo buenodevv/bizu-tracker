@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.gitignore
+.npm-cache
+npm-debug.log*
+README.md
+docs
+LICENSE
+.env.local
+.env*.local
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+.vscode
+.idea

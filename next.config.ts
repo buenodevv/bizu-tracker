@@ -6,6 +6,13 @@ import type { NextConfig } from "next";
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  /**
+   * Gera um servidor autocontido em `.next/standalone`, com apenas as
+   * dependências realmente usadas. É o modo recomendado para Docker —
+   * a imagem final fica muito menor.
+   */
+  output: "standalone",
+
   cacheComponents: true,
   partialPrefetching: true,
 
