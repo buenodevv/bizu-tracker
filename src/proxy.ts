@@ -47,8 +47,11 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/register") ||
     pathname.startsWith("/auth");
 
-  // Rotas públicas: acessíveis sem sessão (compartilhamento de ciclos).
-  const isPublicRoute = pathname.startsWith("/cycles/public");
+  // Rotas públicas, que não exigem sessão:
+  // - /cycles/public/... → compartilhamento de ciclos
+  // - /api/health        → healthcheck do container (nunca deve redirecionar)
+  const isPublicRoute =
+    pathname.startsWith("/cycles/public") || pathname.startsWith("/api/health");
 
   // Usuário não autenticado tentando acessar área protegida.
   if (!user && !isAuthRoute && !isPublicRoute) {
