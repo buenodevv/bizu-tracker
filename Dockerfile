@@ -87,8 +87,11 @@ USER nextjs
 EXPOSE 3000
 
 # Healthcheck: usa a rota dedicada /api/health, que não passa por autenticação
-# e não depende do Supabase. Um redirect (ex.: /login) contaria como falha.
+# e não depende do Supabase (um redirect para /login contaria como falha).
+#
+# A porta vem de $PORT e não é fixa: o Easypanel pode injetar outra (ex.: 80).
+# Usamos `sh -c` para que a variável seja expandida em tempo de execução.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD sh -c "node -e \"fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
 
 CMD ["node", "server.js"]
