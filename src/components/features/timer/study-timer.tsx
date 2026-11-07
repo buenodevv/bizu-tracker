@@ -191,7 +191,11 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       {/* Relógio */}
-      <Card>
+      <Card
+        className={`animate-fade-in-up transition-shadow duration-500 ${
+          isRunning ? "timer-glow" : ""
+        }`}
+      >
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <div>
@@ -226,7 +230,9 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
         <CardContent className="flex flex-col items-center gap-6 py-8">
           <div className="flex flex-col items-center gap-2">
             <div
-              className="font-mono text-6xl font-semibold tracking-tight tabular-nums sm:text-7xl"
+              className={`font-mono text-6xl font-semibold tracking-tight tabular-nums transition-colors duration-300 sm:text-7xl ${
+                isRunning ? "text-primary animate-pulse-soft" : ""
+              }`}
               aria-live="polite"
             >
               {formatClock(displaySeconds)}
@@ -241,7 +247,12 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
           </div>
 
           {mode === "pomodoro" ? (
-            <Progress value={progressPct} className="h-2 w-full max-w-md" />
+            <Progress
+              value={progressPct}
+              className={`h-2 w-full max-w-md transition-opacity duration-300 ${
+                isRunning ? "shimmer-bar" : ""
+              }`}
+            />
           ) : null}
 
           <div className="flex flex-wrap items-center justify-center gap-2">

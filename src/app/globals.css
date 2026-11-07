@@ -4,6 +4,84 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ==========================================================================
+   Animações — leves e discretas, para dar fluidez sem chamar atenção.
+   ========================================================================== */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Pulso suave — usado no cronômetro em execução. */
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Brilho que atravessa a barra de progresso em andamento. */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Aparecimento escalonado de listas (cada item soma um atraso). */
+@keyframes list-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -46,75 +124,104 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Utilitários de animação: animate-fade-in, animate-fade-in-up, ... */
+  --animate-fade-in: fade-in 0.3s ease-out both;
+  --animate-fade-in-up: fade-in-up 0.4s ease-out both;
+  --animate-scale-in: scale-in 0.2s ease-out both;
+  --animate-slide-in-right: slide-in-right 0.25s ease-out both;
+  --animate-pulse-soft: pulse-soft 2.4s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.8s ease-in-out infinite;
+  --animate-list-item: list-item-in 0.3s ease-out both;
 }
 
+/* ==========================================================================
+   Tema claro — índigo como cor de destaque, gráficos coloridos.
+   ========================================================================== */
 :root {
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.16 0.012 265);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.16 0.012 265);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.16 0.012 265);
+
+  --primary: oklch(0.52 0.19 267);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.968 0.006 265);
+  --secondary-foreground: oklch(0.28 0.02 267);
+  --muted: oklch(0.968 0.006 265);
+  --muted-foreground: oklch(0.53 0.02 265);
+
+  --accent: oklch(0.955 0.02 267);
+  --accent-foreground: oklch(0.36 0.12 267);
+
+  --destructive: oklch(0.58 0.22 25);
+  --border: oklch(0.925 0.008 265);
+  --input: oklch(0.925 0.008 265);
+  --ring: oklch(0.62 0.16 267);
+
+  /* Paleta dos gráficos — tons distintos e harmônicos. */
+  --chart-1: oklch(0.58 0.19 267);
+  --chart-2: oklch(0.68 0.14 182);
+  --chart-3: oklch(0.76 0.15 78);
+  --chart-4: oklch(0.64 0.2 12);
+  --chart-5: oklch(0.6 0.2 305);
+
+  --radius: 0.7rem;
+
+  --sidebar: oklch(0.985 0.004 265);
+  --sidebar-foreground: oklch(0.24 0.02 267);
+  --sidebar-primary: oklch(0.52 0.19 267);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.945 0.022 267);
+  --sidebar-accent-foreground: oklch(0.36 0.12 267);
+  --sidebar-border: oklch(0.925 0.008 265);
+  --sidebar-ring: oklch(0.62 0.16 267);
 }
 
+/* ==========================================================================
+   Tema escuro
+   ========================================================================== */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --background: oklch(0.15 0.012 265);
+  --foreground: oklch(0.97 0.004 265);
+  --card: oklch(0.19 0.014 265);
+  --card-foreground: oklch(0.97 0.004 265);
+  --popover: oklch(0.19 0.014 265);
+  --popover-foreground: oklch(0.97 0.004 265);
+
+  --primary: oklch(0.68 0.16 267);
+  --primary-foreground: oklch(0.17 0.02 267);
+
+  --secondary: oklch(0.26 0.016 265);
+  --secondary-foreground: oklch(0.97 0.004 265);
+  --muted: oklch(0.26 0.016 265);
+  --muted-foreground: oklch(0.72 0.018 265);
+
+  --accent: oklch(0.3 0.04 267);
+  --accent-foreground: oklch(0.92 0.03 267);
+
+  --destructive: oklch(0.68 0.19 22);
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.6 0.14 267);
+
+  --chart-1: oklch(0.7 0.17 267);
+  --chart-2: oklch(0.75 0.13 182);
+  --chart-3: oklch(0.82 0.14 82);
+  --chart-4: oklch(0.72 0.17 14);
+  --chart-5: oklch(0.72 0.17 305);
+
+  --sidebar: oklch(0.18 0.014 265);
+  --sidebar-foreground: oklch(0.95 0.006 265);
+  --sidebar-primary: oklch(0.68 0.16 267);
+  --sidebar-primary-foreground: oklch(0.17 0.02 267);
+  --sidebar-accent: oklch(0.28 0.04 267);
+  --sidebar-accent-foreground: oklch(0.93 0.03 267);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.6 0.14 267);
 }
 
 @layer base {
@@ -126,5 +233,58 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+  }
+
+  /* Respeita quem prefere menos movimento. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Entrada escalonada: aplique com style={{ animationDelay }}. */
+  .stagger-item {
+    animation: var(--animate-list-item);
+  }
+
+  /* Cartão com leve elevação ao passar o mouse. */
+  .card-hover {
+    @apply transition-all duration-200 ease-out;
+  }
+  .card-hover:hover {
+    @apply -translate-y-0.5 shadow-md ring-foreground/15;
+  }
+
+  /* Barra de progresso com brilho sutil quando há atividade. */
+  .shimmer-bar {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer-bar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      oklch(1 0 0 / 35%),
+      transparent
+    );
+    animation: var(--animate-shimmer);
+  }
+
+  /* Fundo com brilho suave para o cronômetro em execução. */
+  .timer-glow {
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--primary) 25%, transparent),
+      0 8px 32px -8px color-mix(in oklch, var(--primary) 30%, transparent);
   }
 }

@@ -179,8 +179,12 @@ async function QuestionsContent() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map(({ label, value, hint, icon: Icon }) => (
-          <Card key={label}>
+        {cards.map(({ label, value, hint, icon: Icon }, index) => (
+          <Card
+            key={label}
+            className="card-hover animate-fade-in-up"
+            style={{ animationDelay: `${index * 60}ms` }}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-muted-foreground text-sm font-medium">
                 {label}

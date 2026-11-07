@@ -5,6 +5,7 @@ import { User, Target } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/components/features/settings/profile-form";
+import { AvatarUploader } from "@/components/features/settings/avatar-uploader";
 import {
   StudyAreaEditor,
   type AreaItem,
@@ -28,7 +29,7 @@ async function SettingsContent() {
   const [profileRes, areasRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("name, weekly_goal_min, timezone")
+      .select("name, avatar_url, weekly_goal_min, timezone")
       .eq("id", user.id)
       .maybeSingle(),
     supabase
@@ -49,6 +50,21 @@ async function SettingsContent() {
           Ajuste suas preferências de estudo e seus dados.
         </p>
       </div>
+
+      <Card className="animate-fade-in-up">
+        <CardHeader>
+          <CardTitle className="text-base">Foto de perfil</CardTitle>
+          <CardDescription>
+            Sua imagem aparece na barra lateral e no menu.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AvatarUploader
+            name={profile?.name || user.name}
+            avatarUrl={profile?.avatar_url ?? user.avatarUrl}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -9,6 +9,7 @@ export type AuthUser = {
   id: string;
   email: string | null;
   name: string;
+  avatarUrl: string | null;
 };
 
 /**
@@ -33,7 +34,7 @@ export async function requireUser(): Promise<AuthUser> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name")
+    .select("name, avatar_url")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -41,6 +42,7 @@ export async function requireUser(): Promise<AuthUser> {
     id: user.id,
     email: user.email ?? null,
     name: profile?.name || user.email?.split("@")[0] || "Estudante",
+    avatarUrl: profile?.avatar_url ?? null,
   };
 }
 
@@ -57,7 +59,7 @@ export async function getUser(): Promise<AuthUser | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name")
+    .select("name, avatar_url")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -65,5 +67,6 @@ export async function getUser(): Promise<AuthUser | null> {
     id: user.id,
     email: user.email ?? null,
     name: profile?.name || user.email?.split("@")[0] || "Estudante",
+    avatarUrl: profile?.avatar_url ?? null,
   };
 }

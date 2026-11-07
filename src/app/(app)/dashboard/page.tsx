@@ -127,7 +127,7 @@ async function DashboardStats() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <div className="animate-fade-in">
         <h1 className="text-2xl font-semibold tracking-tight">
           Bem-vindo de volta, {user.name.split(" ")[0]}!
         </h1>
@@ -137,8 +137,12 @@ async function DashboardStats() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map(({ label, value, hint, icon: Icon }) => (
-          <Card key={label}>
+        {stats.map(({ label, value, hint, icon: Icon }, index) => (
+          <Card
+            key={label}
+            className="card-hover animate-fade-in-up"
+            style={{ animationDelay: `${index * 60}ms` }}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-muted-foreground text-sm font-medium">
                 {label}
@@ -211,9 +215,9 @@ async function DashboardStats() {
             <Link
               key={href}
               href={href}
-              className="hover:bg-muted/50 group flex items-start gap-3 rounded-xl border p-4 transition-colors"
+              className="hover:bg-muted/50 hover:border-primary/30 group flex items-start gap-3 rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
             >
-              <div className="bg-muted text-muted-foreground group-hover:text-foreground flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors">
+              <div className="bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 group-hover:scale-105">
                 <Icon className="size-4" />
               </div>
               <div className="min-w-0">

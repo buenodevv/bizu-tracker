@@ -7,7 +7,7 @@ import Link from "next/link";
 import { LogOut, Settings, UserRound } from "lucide-react";
 
 import { logout } from "@/app/(auth)/actions";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,9 +22,11 @@ import {
 export function UserMenu({
   name,
   email,
+  avatarUrl,
 }: {
   name: string;
   email: string | null;
+  avatarUrl: string | null;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -47,21 +49,30 @@ export function UserMenu({
           />
         }
       >
-        <Avatar className="size-8">
-          <AvatarFallback className="text-xs">
+        <Avatar className="size-8 ring-2 ring-border transition-all duration-200 group-hover/button:ring-primary/40">
+          {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} /> : null}
+          <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
             {initials || <UserRound className="size-4" />}
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex flex-col gap-0.5">
-            <span className="truncate">{name}</span>
-            {email ? (
-              <span className="text-muted-foreground truncate text-xs font-normal">
-                {email}
-              </span>
-            ) : null}
+          <DropdownMenuLabel className="flex items-center gap-2">
+            <Avatar className="size-8">
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} /> : null}
+              <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                {initials || <UserRound className="size-4" />}
+              </AvatarFallback>
+            </Avatar>
+            <span className="flex min-w-0 flex-col gap-0.5">
+              <span className="truncate">{name}</span>
+              {email ? (
+                <span className="text-muted-foreground truncate text-xs font-normal">
+                  {email}
+                </span>
+              ) : null}
+            </span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

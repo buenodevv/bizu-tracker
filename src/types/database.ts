@@ -32,6 +32,7 @@ export interface Database {
         Row: {
           id: string;
           name: string;
+          avatar_url: string | null;
           weekly_goal_min: number;
           timezone: string;
           created_at: string;
@@ -40,6 +41,7 @@ export interface Database {
         Insert: {
           id: string;
           name?: string;
+          avatar_url?: string | null;
           weekly_goal_min?: number;
           timezone?: string;
           created_at?: string;
@@ -48,6 +50,7 @@ export interface Database {
         Update: {
           id?: string;
           name?: string;
+          avatar_url?: string | null;
           weekly_goal_min?: number;
           timezone?: string;
           created_at?: string;

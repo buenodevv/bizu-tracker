@@ -5,6 +5,7 @@ import { Brand, MainNav } from "@/components/features/layout/main-nav";
 import { UserMenu } from "@/components/features/layout/user-menu";
 import { MobileNav } from "@/components/features/layout/mobile-nav";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageTransition } from "@/components/features/layout/page-transition";
 
 async function UserHeader() {
   const user = await requireUser();
@@ -19,7 +20,7 @@ async function UserHeader() {
           Olá, {user.name.split(" ")[0]} 👋
         </span>
       </div>
-      <UserMenu name={user.name} email={user.email} />
+      <UserMenu name={user.name} email={user.email} avatarUrl={user.avatarUrl} />
     </header>
   );
 }
@@ -49,7 +50,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <UserHeader />
         </Suspense>
 
-        <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
     </div>
   );
