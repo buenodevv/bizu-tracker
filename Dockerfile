@@ -41,6 +41,14 @@ ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ARG NEXT_PUBLIC_SITE_URL
 
+# Falha cedo (com mensagem clara) se as variáveis públicas não forem passadas
+# como build args — elas são embutidas no bundle e não podem faltar.
+RUN test -n "$NEXT_PUBLIC_SUPABASE_URL" \
+ && test -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+ || (echo "\n[ERRO] NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY são" \
+     "obrigatórias em BUILD TIME. Configure-as como build args no Easypanel.\n" \
+     && exit 1)
+
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
@@ -82,6 +90,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pdf-parse ./node_mod
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/pdfjs-dist ./node_modules/pdfjs-dist
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@napi-rs ./node_modules/@napi-rs
 
+# Entrypoint que fixa a porta em 3000 antes de carregar o servidor.
+COPY --from=builder --chown=nextjs:nodejs /app/docker-entrypoint.js ./docker-entrypoint.js
+
 USER nextjs
 
 EXPOSE 3000
@@ -91,7 +102,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-# A porta é fixada em 3000 aqui, ignorando um `PORT` injetado pela plataforma.
-# Isso torna o comportamento previsível: a porta interna é SEMPRE 3000, então
-# basta apontar o serviço do Easypanel para 3000.
-CMD ["sh", "-c", "PORT=3000 HOSTNAME=0.0.0.0 exec node server.js"]
+# O entrypoint força PORT=3000 mesmo que a plataforma injete outro valor.
+# Comportamento previsível: a porta interna é SEMPRE 3000.
+CMD ["node", "docker-entrypoint.js"]
