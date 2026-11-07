@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 
-import { Copy, Globe, Lock, Share2, Trash2 } from "lucide-react";
+import { Copy, Globe, Lock, Pencil, Share2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -21,11 +21,13 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { CycleEditForm } from "@/components/features/cycles/cycle-edit-form";
 import { ACTIVITY_LABELS, formatMinutes } from "@/lib/format";
 import type { ActivityType } from "@/types/database";
 
 export type CycleBlockView = {
   id: string;
+  subject_id: string | null;
   subject_name: string;
   activity: ActivityType;
   minutes: number;
@@ -45,8 +47,15 @@ export type CycleView = {
 
 const DAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
-export function CycleCard({ cycle }: { cycle: CycleView }) {
+export function CycleCard({
+  cycle,
+  subjectNames = [],
+}: {
+  cycle: CycleView;
+  subjectNames?: string[];
+}) {
   const [isPublic, setIsPublic] = useState(cycle.is_public);
+  const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const total = cycle.blocks.reduce((acc, b) => acc + b.minutes, 0);
@@ -123,6 +132,14 @@ export function CycleCard({ cycle }: { cycle: CycleView }) {
                 <Button
                   variant="ghost"
                   size="icon-sm"
+                  aria-label="Editar ciclo"
+                  onClick={() => setEditing((v) => !v)}
+                >
+                  <Pencil className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   aria-label="Excluir ciclo"
                   disabled={isPending}
                   onClick={() =>
@@ -158,6 +175,24 @@ export function CycleCard({ cycle }: { cycle: CycleView }) {
       </CardHeader>
 
       <CardContent className="flex flex-col gap-3">
+        {editing && cycle.isOwn ? (
+          <CycleEditForm
+            cycleId={cycle.id}
+            initialName={cycle.name}
+            initialDescription={cycle.description}
+            initialPeriodDays={cycle.period_days}
+            initialBlocks={cycle.blocks.map((b) => ({
+              subject_id: b.subject_id,
+              subject_name: b.subject_name,
+              activity: b.activity,
+              minutes: b.minutes,
+              day_of_cycle: b.day_of_cycle,
+            }))}
+            subjectNames={subjectNames}
+            onDone={() => setEditing(false)}
+          />
+        ) : null}
+
         {cycle.description ? (
           <p className="text-muted-foreground text-sm">{cycle.description}</p>
         ) : null}

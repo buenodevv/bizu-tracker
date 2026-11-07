@@ -224,3 +224,84 @@ export async function setCycleVisibility(
   revalidateCycleViews();
   return { success: isPublic ? "Ciclo agora é público." : "Ciclo tornado privado." };
 }
+
+/**
+ * Atualiza um ciclo existente: nome, descrição, período e blocos.
+ * Os blocos são substituídos integralmente (mais simples e previsível).
+ */
+export async function updateCycle(
+  id: string,
+  input: {
+    name: string;
+    description?: string | null;
+    period_days: number;
+    blocks: CycleBlockInput[];
+  },
+): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Sessão expirada. Entre novamente." };
+
+  const parsed = cycleSchema
+    .omit({ study_area_id: true })
+    .safeParse({
+      name: input.name,
+      description: input.description ?? undefined,
+      period_days: input.period_days,
+      blocks: input.blocks,
+    });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  // Confirma a posse antes de alterar.
+  const { data: existing } = await supabase
+    .from("cycles")
+    .select("id, study_area_id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!existing) return { error: "Ciclo não encontrado." };
+
+  const { error } = await supabase
+    .from("cycles")
+    .update({
+      name: parsed.data.name,
+      description: parsed.data.description || null,
+      period_days: parsed.data.period_days,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { error: "Não foi possível atualizar o ciclo." };
+
+  // Substitui os blocos.
+  const { error: delError } = await supabase
+    .from("cycle_blocks")
+    .delete()
+    .eq("cycle_id", id);
+
+  if (delError) return { error: "Não foi possível atualizar os blocos." };
+
+  const { error: insError } = await supabase.from("cycle_blocks").insert(
+    parsed.data.blocks.map((b, i) => ({
+      cycle_id: id,
+      subject_id: b.subject_id ?? null,
+      subject_name: b.subject_name,
+      activity: b.activity as ActivityType,
+      minutes: b.minutes,
+      day_of_cycle: b.day_of_cycle,
+      sort_order: b.sort_order ?? i,
+    })),
+  );
+
+  if (insError) return { error: "Não foi possível salvar os blocos." };
+
+  revalidateCycleViews();
+  return { success: true };
+}

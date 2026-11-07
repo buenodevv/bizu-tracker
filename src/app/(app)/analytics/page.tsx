@@ -14,6 +14,7 @@ import {
   AccuracyChart,
   HoursByDayChart,
   HoursBySubjectChart,
+  HoursByTopicChart,
 } from "@/components/features/analytics/charts";
 import {
   RangeSelector,
@@ -26,6 +27,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata = { title: "Rendimento" };
@@ -59,12 +61,15 @@ async function AnalyticsContent({
 
   const args = { _from: from.toISOString(), _to: now.toISOString() };
 
-  const [totalsRes, bySubjectRes, byDayRes, accuracyRes] = await Promise.all([
-    supabase.rpc("analytics_totals", args),
-    supabase.rpc("analytics_hours_by_subject", args),
-    supabase.rpc("analytics_hours_by_day", args),
-    supabase.rpc("analytics_accuracy_by_subject", args),
-  ]);
+  const [totalsRes, bySubjectRes, byDayRes, accuracyRes, byTopicRes, coverageRes] =
+    await Promise.all([
+      supabase.rpc("analytics_totals", args),
+      supabase.rpc("analytics_hours_by_subject", args),
+      supabase.rpc("analytics_hours_by_day", args),
+      supabase.rpc("analytics_accuracy_by_subject", args),
+      supabase.rpc("analytics_hours_by_topic", args),
+      supabase.rpc("analytics_edital_coverage"),
+    ]);
 
   const totals = totalsRes.data?.[0];
   const bySubject = (bySubjectRes.data ?? []).map((r) => ({
@@ -79,6 +84,18 @@ async function AnalyticsContent({
     subject_name: r.subject_name,
     accuracy: Number(r.accuracy),
     total: Number(r.total),
+  }));
+  const byTopic = (byTopicRes.data ?? []).map((r) => ({
+    topic_name: r.topic_name,
+    subject_name: r.subject_name,
+    minutes: Number(r.minutes),
+  }));
+  const coverage = (coverageRes.data ?? []).map((r) => ({
+    subject_name: r.subject_name,
+    total_topics: Number(r.total_topics),
+    started_topics: Number(r.started_topics),
+    done_topics: Number(r.done_topics),
+    coverage_pct: Number(r.coverage_pct),
   }));
 
   const hasSessions = (totals?.total_sessions ?? 0) > 0;
@@ -209,6 +226,49 @@ async function AnalyticsContent({
           <AccuracyChart data={accuracy} />
         </CardContent>
       </Card>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Tempo por tópico</CardTitle>
+            <CardDescription>
+              Onde seu tempo foi investido dentro de cada disciplina.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HoursByTopicChart data={byTopic} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Cobertura do edital</CardTitle>
+            <CardDescription>
+              Quanto de cada disciplina você já concluiu.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {coverage.length === 0 ? (
+              <p className="text-muted-foreground py-10 text-center text-sm">
+                Adicione tópicos ao seu edital para ver a cobertura.
+              </p>
+            ) : (
+              coverage.map((c) => (
+                <div key={c.subject_name} className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="truncate font-medium">{c.subject_name}</span>
+                    <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                      {c.done_topics}/{c.total_topics} concluídos ·{" "}
+                      {c.coverage_pct}%
+                    </span>
+                  </div>
+                  <Progress value={c.coverage_pct} />
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

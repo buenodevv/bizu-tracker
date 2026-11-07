@@ -248,3 +248,62 @@ function ChartTooltip({
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Horas por tópico (barras horizontais, agrupadas visualmente por disciplina)
+// ---------------------------------------------------------------------------
+
+export type HoursByTopicDatum = {
+  topic_name: string;
+  subject_name: string;
+  minutes: number;
+};
+
+export function HoursByTopicChart({ data }: { data: HoursByTopicDatum[] }) {
+  if (data.length === 0) {
+    return (
+      <EmptyChart message="Nenhum tópico registrado no período. Escolha um tópico ao usar o cronômetro." />
+    );
+  }
+
+  // Limita a 12 tópicos para o gráfico ficar legível.
+  const top = data.slice(0, 12);
+  const height = Math.max(220, top.length * 38);
+
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart
+        data={top}
+        layout="vertical"
+        margin={{ left: 8, right: 40, top: 8, bottom: 8 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+        <XAxis
+          type="number"
+          tickFormatter={(v: number) => formatMinutes(v)}
+          stroke="var(--muted-foreground)"
+          fontSize={12}
+        />
+        <YAxis
+          type="category"
+          dataKey="topic_name"
+          width={170}
+          stroke="var(--muted-foreground)"
+          fontSize={11}
+          tickFormatter={(v: string) => (v.length > 26 ? `${v.slice(0, 25)}…` : v)}
+        />
+        <Tooltip
+          content={<ChartTooltip formatter={(v) => formatMinutes(Number(v))} />}
+        />
+        <Bar dataKey="minutes" radius={[0, 6, 6, 0]} name="Minutos">
+          {top.map((d, i) => (
+            <Cell
+              key={i}
+              fill={CHART_COLORS[i % CHART_COLORS.length]}
+            />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}

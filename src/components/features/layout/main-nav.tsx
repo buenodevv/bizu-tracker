@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   ListChecks,
   Repeat,
+  Settings,
   Timer,
   TrendingUp,
 } from "lucide-react";
@@ -22,6 +23,7 @@ const items = [
   { href: "/analytics", label: "Rendimento", icon: TrendingUp },
   { href: "/cycles", label: "Ciclos", icon: Repeat },
   { href: "/edital", label: "Edital", icon: ClipboardList },
+  { href: "/settings", label: "Configurações", icon: Settings },
 ];
 
 export function MainNav() {

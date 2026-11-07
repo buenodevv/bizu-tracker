@@ -2,7 +2,9 @@
 
 import { useTransition } from "react";
 
-import { LogOut, UserRound } from "lucide-react";
+import Link from "next/link";
+
+import { LogOut, Settings, UserRound } from "lucide-react";
 
 import { logout } from "@/app/(auth)/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -63,6 +65,13 @@ export function UserMenu({
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem
+          render={<Link href="/settings" />}
+          nativeButton={false}
+        >
+          <Settings className="size-4" />
+          Configurações
+        </DropdownMenuItem>
         <DropdownMenuItem
           disabled={isPending}
           onClick={() => startTransition(() => logout())}

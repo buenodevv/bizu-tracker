@@ -114,7 +114,7 @@ async function CyclesContent() {
   if (allIds.length > 0) {
     const { data: blocks } = await supabase
       .from("cycle_blocks")
-      .select("id, cycle_id, subject_name, activity, minutes, day_of_cycle, sort_order")
+      .select("id, cycle_id, subject_id, subject_name, activity, minutes, day_of_cycle, sort_order")
       .in("cycle_id", allIds)
       .order("day_of_cycle")
       .order("sort_order");
@@ -123,6 +123,7 @@ async function CyclesContent() {
       const list = blocksByCycle.get(b.cycle_id) ?? [];
       list.push({
         id: b.id,
+        subject_id: b.subject_id,
         subject_name: b.subject_name,
         activity: b.activity as ActivityType,
         minutes: b.minutes,
@@ -198,7 +199,13 @@ async function CyclesContent() {
               description="Use o editor acima para gerar um ciclo automaticamente a partir do edital."
             />
           ) : (
-            myCycles.map((c) => <CycleCard key={c.id} cycle={c} />)
+            myCycles.map((c) => (
+              <CycleCard
+                key={c.id}
+                cycle={c}
+                subjectNames={subjects.map((s) => s.name)}
+              />
+            ))
           )}
         </TabsContent>
 
@@ -209,7 +216,13 @@ async function CyclesContent() {
               description="Quando alguém compartilhar um ciclo publicamente, ele aparece aqui para você copiar."
             />
           ) : (
-            publicCycles.map((c) => <CycleCard key={c.id} cycle={c} />)
+            publicCycles.map((c) => (
+              <CycleCard
+                key={c.id}
+                cycle={c}
+                subjectNames={subjects.map((s) => s.name)}
+              />
+            ))
           )}
         </TabsContent>
       </Tabs>

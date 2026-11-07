@@ -290,6 +290,8 @@ export interface Database {
           study_area_id: string | null;
           subject_id: string | null;
           subject_name: string;
+          topic_id: string | null;
+          topic_name: string | null;
           exam_board: string | null;
           level: QuestionLevel;
           result: QuestionResult;
@@ -303,6 +305,8 @@ export interface Database {
           study_area_id?: string | null;
           subject_id?: string | null;
           subject_name: string;
+          topic_id?: string | null;
+          topic_name?: string | null;
           exam_board?: string | null;
           level?: QuestionLevel;
           result?: QuestionResult;
@@ -316,6 +320,8 @@ export interface Database {
           study_area_id?: string | null;
           subject_id?: string | null;
           subject_name?: string;
+          topic_id?: string | null;
+          topic_name?: string | null;
           exam_board?: string | null;
           level?: QuestionLevel;
           result?: QuestionResult;
@@ -414,6 +420,38 @@ export interface Database {
       sync_topic_progress: {
         Args: { _topic_id: string };
         Returns: undefined;
+      };
+      analytics_hours_by_topic: {
+        Args: { _from: string; _to: string };
+        Returns: {
+          topic_id: string;
+          topic_name: string;
+          subject_name: string;
+          minutes: number;
+          sessions: number;
+        }[];
+      };
+      analytics_accuracy_by_topic: {
+        Args: { _from: string; _to: string };
+        Returns: {
+          topic_id: string;
+          topic_name: string;
+          subject_name: string;
+          total: number;
+          correct: number;
+          accuracy: number;
+        }[];
+      };
+      analytics_edital_coverage: {
+        Args: Record<string, never>;
+        Returns: {
+          subject_id: string;
+          subject_name: string;
+          total_topics: number;
+          started_topics: number;
+          done_topics: number;
+          coverage_pct: number;
+        }[];
       };
       analytics_totals: {
         Args: { _from: string; _to: string };
