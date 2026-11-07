@@ -1,0 +1,241 @@
+import { Suspense } from "react";
+
+import {
+  CalendarCheck,
+  ListChecks,
+  Target,
+  Timer,
+} from "lucide-react";
+
+import { requireUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { formatMinutes } from "@/lib/format";
+import {
+  AccuracyChart,
+  HoursByDayChart,
+  HoursBySubjectChart,
+} from "@/components/features/analytics/charts";
+import {
+  RangeSelector,
+  type RangeKey,
+} from "@/components/features/analytics/range-selector";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export const metadata = { title: "Rendimento" };
+
+const RANGE_DAYS: Record<RangeKey, number> = {
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+  "365d": 365,
+};
+
+function resolveRange(raw?: string): RangeKey {
+  return raw && raw in RANGE_DAYS ? (raw as RangeKey) : "30d";
+}
+
+async function AnalyticsContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
+  const { range: rawRange } = await searchParams;
+  const range = resolveRange(rawRange);
+
+  await requireUser();
+  const supabase = await createClient();
+
+  const now = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - RANGE_DAYS[range]);
+  from.setHours(0, 0, 0, 0);
+
+  const args = { _from: from.toISOString(), _to: now.toISOString() };
+
+  const [totalsRes, bySubjectRes, byDayRes, accuracyRes] = await Promise.all([
+    supabase.rpc("analytics_totals", args),
+    supabase.rpc("analytics_hours_by_subject", args),
+    supabase.rpc("analytics_hours_by_day", args),
+    supabase.rpc("analytics_accuracy_by_subject", args),
+  ]);
+
+  const totals = totalsRes.data?.[0];
+  const bySubject = (bySubjectRes.data ?? []).map((r) => ({
+    subject_name: r.subject_name,
+    minutes: Number(r.minutes),
+  }));
+  const byDay = (byDayRes.data ?? []).map((r) => ({
+    day: String(r.day),
+    minutes: Number(r.minutes),
+  }));
+  const accuracy = (accuracyRes.data ?? []).map((r) => ({
+    subject_name: r.subject_name,
+    accuracy: Number(r.accuracy),
+    total: Number(r.total),
+  }));
+
+  const hasSessions = (totals?.total_sessions ?? 0) > 0;
+  const rpcError =
+    totalsRes.error ?? bySubjectRes.error ?? byDayRes.error ?? accuracyRes.error;
+
+  const cards = [
+    {
+      label: "Tempo estudado",
+      value: formatMinutes(Number(totals?.total_minutes ?? 0)),
+      hint: `${Number(totals?.total_sessions ?? 0)} sessões`,
+      icon: Timer,
+    },
+    {
+      label: "Questões",
+      value: String(Number(totals?.questions_total ?? 0)),
+      hint: `${Number(totals?.accuracy ?? 0).toFixed(1)}% de acerto`,
+      icon: ListChecks,
+    },
+    {
+      label: "Dias ativos",
+      value: String(Number(totals?.active_days ?? 0)),
+      hint: `de ${RANGE_DAYS[range]} dias`,
+      icon: CalendarCheck,
+    },
+    {
+      label: "Média/dia ativo",
+      value: (() => {
+        const activeDays = Number(totals?.active_days ?? 0);
+        const minutes = Number(totals?.total_minutes ?? 0);
+        return activeDays > 0 ? formatMinutes(minutes / activeDays) : "—";
+      })(),
+      hint: "nos dias com estudo",
+      icon: Target,
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Rendimento</h1>
+          <p className="text-muted-foreground text-sm">
+            Horas e desempenho no período selecionado.
+          </p>
+        </div>
+        <RangeSelector value={range} />
+      </div>
+
+      {rpcError ? (
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="text-base">Funções de analytics ausentes</CardTitle>
+            <CardDescription>
+              Rode a migration <code>supabase/migrations/0002_analytics.sql</code>{" "}
+              no SQL Editor do Supabase para habilitar os gráficos.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <pre className="bg-muted overflow-x-auto rounded-lg p-3 text-xs">
+              {rpcError.message}
+            </pre>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map(({ label, value, hint, icon: Icon }) => (
+          <Card key={label}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-muted-foreground text-sm font-medium">
+                {label}
+              </CardTitle>
+              <Icon className="text-muted-foreground size-4" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-semibold tracking-tight">{value}</div>
+              <p className="text-muted-foreground text-xs">{hint}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Horas por matéria</CardTitle>
+            <CardDescription>
+              Onde seu tempo foi investido no período.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {hasSessions ? (
+              <HoursBySubjectChart data={bySubject} />
+            ) : (
+              <p className="text-muted-foreground py-10 text-center text-sm">
+                Sem sessões no período. Use o cronômetro para começar.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Evolução diária</CardTitle>
+            <CardDescription>Tempo estudado por dia.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {hasSessions ? (
+              <HoursByDayChart data={byDay} />
+            ) : (
+              <p className="text-muted-foreground py-10 text-center text-sm">
+                Sem sessões no período.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Acurácia por matéria</CardTitle>
+          <CardDescription>
+            Matérias com menor acurácia aparecem primeiro — priorize-as na revisão.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AccuracyChart data={accuracy} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col gap-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 rounded-xl" />
+            ))}
+          </div>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-72 rounded-xl" />
+            <Skeleton className="h-72 rounded-xl" />
+          </div>
+        </div>
+      }
+    >
+      <AnalyticsContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
