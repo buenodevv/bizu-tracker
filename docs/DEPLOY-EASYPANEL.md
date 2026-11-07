@@ -142,6 +142,36 @@ git push origin main
 
 ## Problemas comuns
 
+### "Service is not reachable" mesmo com o container rodando
+
+Aparece quando o healthcheck falha. Causas já corrigidas neste projeto:
+
+1. **`/api/health` redirecionava para `/login`** — o proxy exige sessão em todas
+   as rotas. A rota agora é liberada em `src/proxy.ts`.
+2. **Porta divergente** — a plataforma injeta `PORT` (era 80) e o healthcheck
+   consultava 3000. O `docker-entrypoint.js` força `PORT=3000` antes de carregar
+   o servidor, então a porta interna é sempre previsível.
+
+Se o serviço subir na porta errada, confira no log:
+
+```
+- Local: http://localhost:3000    ← esperado
+```
+
+### "Your project's URL and Key are required to create a Supabase client"
+
+As variáveis `NEXT_PUBLIC_*` não chegaram **no build**. Elas são embutidas no
+bundle e não servem apenas em runtime.
+
+No Easypanel, em **Environment**, marque as três como **Build Time**:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SITE_URL`
+
+Alterar depois exige reconstruir a imagem. O `Dockerfile` agora falha o build
+com mensagem explícita se esses valores faltarem.
+
 ### A extração de PDF falha com "Setting up fake worker failed"
 
 O modo `standalone` do Next não copia os workers do `pdfjs-dist`. O `Dockerfile`
@@ -150,9 +180,11 @@ deste projeto já resolve isso copiando os pacotes completos:
 ```dockerfile
 COPY --from=builder /app/node_modules/pdf-parse ./node_modules/pdf-parse
 COPY --from=builder /app/node_modules/pdfjs-dist ./node_modules/pdfjs-dist
+COPY --from=builder /app/node_modules/@napi-rs ./node_modules/@napi-rs
 ```
 
-Se o erro voltar, verifique se esses `COPY` ainda existem no Dockerfile.
+O `pdfjs-dist` completo importa `@napi-rs/canvas`; sem ele o carregamento falha
+em `DOMMatrix`. Se o erro voltar, verifique se os três `COPY` existem.
 
 ### Login redireciona para localhost
 
