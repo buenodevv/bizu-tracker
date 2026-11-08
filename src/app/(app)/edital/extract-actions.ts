@@ -20,6 +20,24 @@ export type ExtractState = {
 const MAX_PDF_BYTES = 15 * 1024 * 1024; // 15 MB
 
 /**
+ * Proteção simples contra extrações simultâneas demais no mesmo processo.
+ * É best-effort (não vale entre réplicas), mas evita segurar o event loop
+ * com vários PDFs grandes ao mesmo tempo.
+ */
+const MAX_CONCURRENT_EXTRACTIONS = 3;
+let activeExtractions = 0;
+
+function tryAcquireExtractionSlot(): boolean {
+  if (activeExtractions >= MAX_CONCURRENT_EXTRACTIONS) return false;
+  activeExtractions += 1;
+  return true;
+}
+
+function releaseExtractionSlot(): void {
+  activeExtractions = Math.max(0, activeExtractions - 1);
+}
+
+/**
  * Extrai texto de um PDF em memória.
  *
  * Nota: `pdf-parse` precisa estar em `serverExternalPackages` no next.config,
@@ -111,86 +129,116 @@ export async function extractFromPdf(
     return { error: "Envie um arquivo PDF." };
   }
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  let text: string;
-  try {
-    text = await pdfToText(buffer);
-  } catch (err) {
-    return { error: describePdfError(err) };
-  }
-
-  if (text.trim().length < 60) {
+  if (!tryAcquireExtractionSlot()) {
     return {
       error:
-        "O PDF parece não ter texto selecionável (provavelmente digitalizado como imagem). A extração automática precisa de um PDF com texto — você pode usar o editor manual abaixo.",
+        "Muitas extrações em andamento no momento. Tente novamente em instantes.",
     };
   }
 
   try {
-    const { data, fromCache } = await extractEditalWithCache(text);
+    // Cota diária por usuário — aplicada dentro do banco, de forma atômica.
+    const { data: quota, error: quotaError } = await ctx.supabase.rpc(
+      "consume_extraction_quota",
+    );
 
-    if (data.subjects.length === 0) {
+    if (quotaError) {
+      // Fail-open: uma falha no controle de cota não deve bloquear a extração.
+      console.warn("consume_extraction_quota falhou:", quotaError.message);
+    } else if (!quota?.[0]?.allowed) {
       return {
         error:
-          "A IA não encontrou disciplinas no documento. Verifique se o PDF contém o conteúdo programático.",
+          "Você atingiu o limite diário de extrações por IA. Tente novamente amanhã ou use o editor manual.",
       };
     }
 
-    if (!hasUsefulTopics(data)) {
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    let text: string;
+    try {
+      text = await pdfToText(buffer);
+    } catch (err) {
+      return { error: describePdfError(err) };
+    }
+
+    if (text.trim().length < 60) {
       return {
         error:
-          "A IA identificou as disciplinas, mas não listou os tópicos. Tente novamente — se persistir, use o editor manual abaixo.",
+          "O PDF parece não ter texto selecionável (provavelmente digitalizado como imagem). A extração automática precisa de um PDF com texto — você pode usar o editor manual abaixo.",
       };
     }
 
-    const { error, count } = await persistExtractedEdital(editalId, data);
+    try {
+      const { data, fromCache } = await extractEditalWithCache(text);
 
-    if (error) return { error };
+      if (data.subjects.length === 0) {
+        return {
+          error:
+            "A IA não encontrou disciplinas no documento. Verifique se o PDF contém o conteúdo programático.",
+        };
+      }
 
-    revalidatePath("/edital");
-    revalidatePath("/cycles");
+      if (!hasUsefulTopics(data)) {
+        return {
+          error:
+            "A IA identificou as disciplinas, mas não listou os tópicos. Tente novamente — se persistir, use o editor manual abaixo.",
+        };
+      }
 
-    return {
-      success: `Extraídas ${data.subjects.length} disciplinas (${count} nós no total). Revise e ajuste abaixo.`,
-      info: fromCache
-        ? "⚡ Resultado veio do cache — nenhum token de IA foi gasto."
-        : `Processado por ${data.subjects.length} disciplinas em uma única chamada de IA.`,
-    };
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Falha inesperada na extração.";
+      const { error, count } = await persistExtractedEdital(editalId, data);
 
-    // Modelo inexistente/descontinuado.
-    if (/no longer available|NOT_FOUND|is not found/i.test(message)) {
+      if (error) return { error };
+
+      revalidatePath("/edital");
+      revalidatePath("/cycles");
+
       return {
-        error:
-          "O modelo de IA configurado não está disponível. Verifique LLM_MODEL no .env.local (ex.: gemini-flash-lite-latest).",
+        success: `Extraídas ${data.subjects.length} disciplinas (${count} nós no total). Revise e ajuste abaixo.`,
+        info: fromCache
+          ? "⚡ Resultado veio do cache — nenhum token de IA foi gasto."
+          : `Processado por ${data.subjects.length} disciplinas em uma única chamada de IA.`,
       };
-    }
-    // Sobrecarga do provedor.
-    if (/UNAVAILABLE|overloaded|high demand/i.test(message)) {
-      return {
-        error:
-          "O serviço de IA está sobrecarregado agora. Tente novamente em alguns instantes.",
-      };
-    }
-    // Cota / limite de uso.
-    if (/quota|rate|429|RESOURCE_EXHAUSTED/i.test(message)) {
-      return {
-        error:
-          "Limite de uso da IA atingido. Aguarde alguns minutos ou verifique sua cota no Google AI Studio.",
-      };
-    }
-    // Credencial inválida.
-    if (/api key|permission|401|403|UNAUTHENTICATED|PERMISSION_DENIED/i.test(message)) {
-      return {
-        error:
-          "Chave da IA inválida ou sem permissão. Confira GEMINI_API_KEY no .env.local.",
-      };
-    }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Falha inesperada na extração.";
 
-    return { error: `Não foi possível extrair: ${message}` };
+      // Modelo inexistente/descontinuado.
+      if (/no longer available|NOT_FOUND|is not found/i.test(message)) {
+        return {
+          error:
+            "O modelo de IA configurado não está disponível. Verifique LLM_MODEL no .env.local (ex.: gemini-flash-lite-latest).",
+        };
+      }
+      // Sobrecarga do provedor.
+      if (/UNAVAILABLE|overloaded|high demand/i.test(message)) {
+        return {
+          error:
+            "O serviço de IA está sobrecarregado agora. Tente novamente em alguns instantes.",
+        };
+      }
+      // Cota / limite de uso.
+      if (/quota|rate|429|RESOURCE_EXHAUSTED/i.test(message)) {
+        return {
+          error:
+            "Limite de uso da IA atingido. Aguarde alguns minutos ou verifique sua cota no Google AI Studio.",
+        };
+      }
+      // Credencial inválida.
+      if (
+        /api key|permission|401|403|UNAUTHENTICATED|PERMISSION_DENIED/i.test(
+          message,
+        )
+      ) {
+        return {
+          error:
+            "Chave da IA inválida ou sem permissão. Confira GEMINI_API_KEY no .env.local.",
+        };
+      }
+
+      return { error: `Não foi possível extrair: ${message}` };
+    }
+  } finally {
+    releaseExtractionSlot();
   }
 }
 

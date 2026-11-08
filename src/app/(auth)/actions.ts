@@ -9,6 +9,17 @@ export type AuthActionState =
   | { error?: string; message?: string }
   | undefined;
 
+/**
+ * Aceita apenas caminhos internos. `//host` e `/\host` são interpretados
+ * pelo navegador como URL protocol-relative e virariam open redirect.
+ */
+function safeInternalPath(target: string, fallback = "/dashboard"): string {
+  if (!target.startsWith("/")) return fallback;
+  if (target.startsWith("//") || target.startsWith("/\\")) return fallback;
+  if (/[\r\n]/.test(target)) return fallback;
+  return target;
+}
+
 function translateError(message: string): string {
   const normalized = message.toLowerCase();
 
@@ -54,7 +65,7 @@ export async function login(
   }
 
   revalidatePath("/", "layout");
-  redirect(redirectTo.startsWith("/") ? redirectTo : "/dashboard");
+  redirect(safeInternalPath(redirectTo));
 }
 
 export async function register(
