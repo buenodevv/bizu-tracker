@@ -136,7 +136,7 @@ async function DashboardStats() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {stats.map(({ label, value, hint, icon: Icon }, index) => (
           <Card
             key={label}
@@ -242,7 +242,7 @@ export default function DashboardPage() {
       fallback={
         <div className="flex flex-col gap-6">
           <Skeleton className="h-8 w-64" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-28 rounded-xl" />
             ))}

@@ -1,6 +1,19 @@
 import Link from "next/link";
 
-import { BookOpenCheck } from "lucide-react";
+import {
+  BookOpenCheck,
+  FileText,
+  Repeat,
+  Timer,
+  TrendingUp,
+} from "lucide-react";
+
+const FEATURES = [
+  { icon: Timer, label: "Cronômetro com pomodoro e modo foco" },
+  { icon: TrendingUp, label: "Rendimento por matéria e acurácia em questões" },
+  { icon: Repeat, label: "Ciclos de estudo compartilháveis" },
+  { icon: FileText, label: "Edital verticalizado gerado por IA" },
+];
 
 export default function AuthLayout({
   children,
@@ -23,25 +36,30 @@ export default function AuthLayout({
         </div>
       </div>
 
-      <div className="bg-muted relative hidden overflow-hidden lg:block">
-        <div className="from-primary/15 to-background absolute inset-0 bg-gradient-to-br via-transparent" />
-        <div className="relative flex h-full flex-col justify-center gap-6 p-12">
-          <blockquote className="space-y-3">
-            <p className="text-2xl font-medium text-balance">
-              &ldquo;Quem mede, melhora. Tenha o controle do seu estudo em um
-              só lugar.&rdquo;
+      <div className="bg-primary text-primary-foreground relative hidden overflow-hidden lg:block">
+        <div className="pointer-events-none absolute -top-24 -right-24 size-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 -left-24 size-96 rounded-full bg-black/15 blur-3xl" />
+
+        <div className="relative flex h-full flex-col justify-center gap-10 p-12">
+          <blockquote className="space-y-4">
+            <p className="text-3xl leading-tight font-medium text-balance">
+              “Quem mede, melhora.”
             </p>
-            <footer className="text-muted-foreground text-sm">
-              Cronômetro, gráficos de rendimento, estatísticas de questões e
-              edital verticalizado.
-            </footer>
+            <p className="text-primary-foreground/80 text-base text-balance">
+              Tenha o controle do seu estudo em um só lugar: minutos, questões,
+              ciclos e edital.
+            </p>
           </blockquote>
 
-          <ul className="text-muted-foreground space-y-2 text-sm">
-            <li>⏱️ Cronômetro com pomodoro e modo foco</li>
-            <li>📈 Rendimento por matéria e acurácia em questões</li>
-            <li>🔁 Ciclos de estudo compartilháveis</li>
-            <li>📄 Edital verticalizado gerado por IA</li>
+          <ul className="space-y-3 text-sm">
+            {FEATURES.map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-center gap-3">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                  <Icon className="size-4" />
+                </span>
+                <span className="text-primary-foreground/90">{label}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

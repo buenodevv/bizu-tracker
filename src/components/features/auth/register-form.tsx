@@ -7,6 +7,7 @@ import { register, type AuthActionState } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function RegisterForm() {
   const [state, formAction, isPending] = useActionState<
@@ -69,10 +70,9 @@ export function RegisterForm() {
 
         <div className="grid gap-2">
           <Label htmlFor="password">Senha</Label>
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             placeholder="Mínimo 8 caracteres"
             autoComplete="new-password"
             minLength={8}

@@ -53,6 +53,7 @@ export async function proxy(request: NextRequest) {
   const isAuthRoute =
     matchesRoute(pathname, "/login") ||
     matchesRoute(pathname, "/register") ||
+    matchesRoute(pathname, "/forgot-password") ||
     matchesRoute(pathname, "/auth");
 
   // Rotas públicas, que não exigem sessão:

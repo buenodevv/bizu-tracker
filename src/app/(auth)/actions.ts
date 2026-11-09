@@ -20,6 +20,10 @@ function safeInternalPath(target: string, fallback = "/dashboard"): string {
   return target;
 }
 
+function siteUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+}
+
 function translateError(message: string): string {
   const normalized = message.toLowerCase();
 
@@ -93,7 +97,7 @@ export async function register(
     password,
     options: {
       data: { name },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`,
+      emailRedirectTo: `${siteUrl()}/auth/callback`,
     },
   });
 
@@ -118,4 +122,70 @@ export async function logout(): Promise<void> {
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/login");
+}
+
+/** Envia o e-mail de redefinição de senha (mensagem sempre genérica). */
+export async function requestPasswordReset(
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const supabase = await createClient();
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!email) {
+    return { error: "Informe o e-mail da sua conta." };
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    // Rota dedicada: a URL de redirect pode ser exata na allowlist do Supabase.
+    redirectTo: `${siteUrl()}/auth/reset`,
+  });
+
+  if (error) {
+    return {
+      error:
+        "Não foi possível enviar o e-mail agora. Aguarde instantes e tente novamente.",
+    };
+  }
+
+  return {
+    message:
+      "Se este e-mail estiver cadastrado, você receberá um link para redefinir a senha.",
+  };
+}
+
+/** Define a nova senha a partir da sessão de recuperação. */
+export async function updatePassword(
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      error: "Link expirado. Solicite uma nova redefinição de senha.",
+    };
+  }
+
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm_password") ?? "");
+
+  if (password.length < 8) {
+    return { error: "A senha deve ter ao menos 8 caracteres." };
+  }
+  if (password !== confirm) {
+    return { error: "As senhas não coincidem." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { error: translateError(error.message) };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/dashboard");
 }

@@ -5,16 +5,16 @@ import { LoginForm } from "@/components/features/auth/login-form";
 async function LoginContent({
   searchParams,
 }: {
-  searchParams: Promise<{ redirectTo?: string }>;
+  searchParams: Promise<{ redirectTo?: string; error?: string }>;
 }) {
-  const { redirectTo } = await searchParams;
-  return <LoginForm redirectTo={redirectTo} />;
+  const { redirectTo, error } = await searchParams;
+  return <LoginForm redirectTo={redirectTo} error={error} />;
 }
 
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirectTo?: string }>;
+  searchParams: Promise<{ redirectTo?: string; error?: string }>;
 }) {
   return (
     <Suspense fallback={<div className="text-muted-foreground text-sm">Carregando...</div>}>

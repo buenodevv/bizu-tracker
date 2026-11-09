@@ -5,7 +5,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
+  LabelList,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -117,7 +117,7 @@ export function HoursByDayChart({ data }: { data: HoursByDayDatum[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Acurácia por matéria (barras verticais)
+// Acurácia por matéria (barras horizontais, menor acurácia primeiro)
 // ---------------------------------------------------------------------------
 
 export type AccuracyDatum = {
@@ -126,29 +126,42 @@ export type AccuracyDatum = {
   total: number;
 };
 
+function accuracyColor(accuracy: number): string {
+  if (accuracy >= 70) return "var(--chart-1)";
+  if (accuracy >= 50) return "var(--chart-3)";
+  return "var(--destructive)";
+}
+
 export function AccuracyChart({ data }: { data: AccuracyDatum[] }) {
   if (data.length === 0) {
     return <EmptyChart message="Nenhuma questão resolvida no período." />;
   }
 
+  const sorted = [...data].sort((a, b) => a.accuracy - b.accuracy);
+  const height = Math.max(200, sorted.length * 44);
+
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={data} margin={{ left: 0, right: 16, top: 8, bottom: 48 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart
+        data={sorted}
+        layout="vertical"
+        margin={{ left: 8, right: 48, top: 8, bottom: 8 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
         <XAxis
-          dataKey="subject_name"
-          stroke="var(--muted-foreground)"
-          fontSize={11}
-          angle={-35}
-          textAnchor="end"
-          interval={0}
-          tickFormatter={(v: string) => (v.length > 14 ? `${v.slice(0, 13)}…` : v)}
-        />
-        <YAxis
+          type="number"
           domain={[0, 100]}
           stroke="var(--muted-foreground)"
           fontSize={12}
           tickFormatter={(v: number) => `${v}%`}
+        />
+        <YAxis
+          type="category"
+          dataKey="subject_name"
+          width={140}
+          stroke="var(--muted-foreground)"
+          fontSize={12}
+          tickFormatter={(v: string) => (v.length > 20 ? `${v.slice(0, 19)}…` : v)}
         />
         <Tooltip
           content={
@@ -162,20 +175,17 @@ export function AccuracyChart({ data }: { data: AccuracyDatum[] }) {
             />
           }
         />
-        <Legend />
-        <Bar dataKey="accuracy" name="Acurácia" radius={[6, 6, 0, 0]}>
-          {data.map((d, i) => (
-            <Cell
-              key={i}
-              fill={
-                d.accuracy >= 70
-                  ? "var(--chart-1)"
-                  : d.accuracy >= 50
-                    ? "var(--chart-3)"
-                    : "var(--destructive)"
-              }
-            />
+        <Bar dataKey="accuracy" radius={[0, 6, 6, 0]} name="Acurácia">
+          {sorted.map((d, i) => (
+            <Cell key={i} fill={accuracyColor(d.accuracy)} />
           ))}
+          <LabelList
+            dataKey="accuracy"
+            position="right"
+            fontSize={11}
+            fill="var(--muted-foreground)"
+            formatter={(value) => `${Math.round(Number(value))}%`}
+          />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
@@ -261,9 +271,7 @@ export type HoursByTopicDatum = {
 
 export function HoursByTopicChart({ data }: { data: HoursByTopicDatum[] }) {
   if (data.length === 0) {
-    return (
-      <EmptyChart message="Nenhum tópico registrado no período. Escolha um tópico ao usar o cronômetro." />
-    );
+    return <EmptyChart message="Nenhum tópico registrado no período." />;
   }
 
   // Limita a 12 tópicos para o gráfico ficar legível.
