@@ -57,9 +57,14 @@ export async function proxy(request: NextRequest) {
     matchesRoute(pathname, "/auth");
 
   // Rotas públicas, que não exigem sessão:
-  // - /cycles/public/... → compartilhamento de ciclos
-  // - /api/health        → healthcheck do container (nunca deve redirecionar)
+  // - /                    → landing page
+  // - /termos e /privacidade → páginas legais
+  // - /cycles/public/...   → compartilhamento de ciclos
+  // - /api/health          → healthcheck do container (nunca deve redirecionar)
   const isPublicRoute =
+    matchesRoute(pathname, "/") ||
+    matchesRoute(pathname, "/termos") ||
+    matchesRoute(pathname, "/privacidade") ||
     matchesRoute(pathname, "/cycles/public") ||
     matchesRoute(pathname, "/api/health");
 
@@ -85,12 +90,11 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Executa em todas as rotas, exceto arquivos estáticos e imagens:
+     * Executa em todas as rotas, exceto:
      * - _next/static (arquivos estáticos)
      * - _next/image (otimização de imagens)
-     * - favicon.ico
-     * - arquivos com extensão (svg, png, jpg, ...)
+     * - qualquer arquivo com extensão (imagens, sitemap.xml, robots.txt, og.png)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.[a-zA-Z0-9]+$).*)",
   ],
 };
