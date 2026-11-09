@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
 
-import Image from "next/image";
 import Link from "next/link";
 
 import {
   Check,
   ListChecks,
-  Plus,
   Repeat,
   Timer,
   TrendingUp,
 } from "lucide-react";
 
+import { FaqItem } from "@/components/features/marketing/faq-item";
+import { ScreenshotFrame } from "@/components/features/marketing/screenshot-frame";
 import { Button } from "@/components/ui/button";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-const TITLE = "Bizu Tracker — do edital ao plano de estudos";
+const TITLE = "Bizu Tracker: do edital ao plano de estudos";
 const DESCRIPTION =
   "Organize disciplinas e tópicos do edital, gere ciclos de estudo e acompanhe seu tempo, questões e rendimento. Grátis para começar.";
 
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
         url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "Bizu Tracker — do edital ao plano de estudos",
+        alt: "Bizu Tracker: do edital ao plano de estudos",
       },
     ],
   },
@@ -53,7 +53,7 @@ const SECONDARY_FEATURES = [
   {
     icon: Timer,
     title: "Cronômetro com pomodoro",
-    text: "Registre sessões de foco com pausas — ou use o tempo livre e pare quando quiser.",
+    text: "Registre sessões de foco com pausas ou use o tempo livre e pare quando quiser.",
   },
   {
     icon: ListChecks,
@@ -75,7 +75,7 @@ const SECONDARY_FEATURES = [
 const STEPS = [
   {
     title: "Crie a área e envie o edital",
-    text: "Escolha concurso ou vestibular. A IA extrai disciplinas e tópicos do PDF — ou você monta tudo à mão.",
+    text: "Escolha concurso ou vestibular. A IA extrai disciplinas e tópicos do PDF; você também pode montar tudo à mão.",
   },
   {
     title: "Revise e gere o ciclo",
@@ -159,7 +159,7 @@ export default function LandingPage() {
 
       {/* ---------------------------------- HERO --------------------------------- */}
       <section className="mx-auto grid w-full max-w-6xl gap-10 px-4 pt-14 pb-16 sm:px-6 sm:pt-20 lg:grid-cols-[1.02fr_1fr] lg:items-center lg:gap-14">
-        <div className="flex flex-col gap-6">
+        <div className="landing-rise flex flex-col gap-6">
           <h1 className="font-display text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
             Do PDF do edital ao plano de estudos do dia.
           </h1>
@@ -189,15 +189,15 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="bg-card overflow-hidden rounded-2xl ring-1 ring-foreground/10">
-          <Image
+        <div className="landing-settle" style={{ animationDelay: "140ms" }}>
+          <ScreenshotFrame
             src="/shots/dashboard.png"
             alt="Dashboard do Bizu Tracker com meta semanal, questões, sequência de estudo e atalhos"
+            title="Dashboard do Bizu Tracker"
             width={1440}
             height={820}
             priority
             sizes="(max-width: 1024px) 100vw, 560px"
-            className="h-auto w-full"
           />
         </div>
       </section>
@@ -231,8 +231,7 @@ export default function LandingPage() {
               </h3>
               <p className="text-muted-foreground text-sm sm:text-base">
                 A IA lê o conteúdo programático e organiza disciplinas, tópicos
-                e subtópicos. Você revisa o que quiser — e pode editar tudo à
-                mão.
+                e subtópicos. Você revisa o que quiser e pode editar tudo à mão.
               </p>
               <ul className="text-muted-foreground flex flex-col gap-2 text-sm">
                 {[
@@ -247,25 +246,27 @@ export default function LandingPage() {
                 ))}
               </ul>
             </div>
-            <Image
+            <ScreenshotFrame
               src="/shots/edital.png"
               alt="Edital verticalizado com disciplinas, tópicos e importância"
+              title="Edital verticalizado"
               width={1440}
               height={900}
               sizes="(max-width: 1024px) 100vw, 560px"
-              className="bg-card h-auto w-full rounded-xl ring-1 ring-foreground/10"
             />
           </div>
 
           <div className="mt-16 grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-14">
-            <Image
-              src="/shots/cycles.png"
-              alt="Ciclos de estudo com blocos distribuídos pelos dias da semana"
-              width={1440}
-              height={900}
-              sizes="(max-width: 1024px) 100vw, 560px"
-              className="bg-card h-auto w-full rounded-xl ring-1 ring-foreground/10 lg:order-1"
-            />
+            <div className="lg:order-1">
+              <ScreenshotFrame
+                src="/shots/cycles.png"
+                alt="Ciclos de estudo com blocos distribuídos pelos dias da semana"
+                title="Ciclos de estudo"
+                width={1440}
+                height={900}
+                sizes="(max-width: 1024px) 100vw, 560px"
+              />
+            </div>
             <div className="flex flex-col gap-4 lg:order-2">
               <h3 className="font-display text-2xl font-semibold tracking-tight">
                 Um ciclo que cabe na sua semana.
@@ -334,13 +335,7 @@ export default function LandingPage() {
           />
           <div className="divide-y border-y">
             {FAQ.map(({ q, a }) => (
-              <details key={q} className="group py-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium [&::-webkit-details-marker]:hidden">
-                  {q}
-                  <Plus className="text-muted-foreground size-4 shrink-0 transition-transform group-open:rotate-45" />
-                </summary>
-                <p className="text-muted-foreground mt-2 pr-8 text-sm">{a}</p>
-              </details>
+              <FaqItem key={q} question={q} answer={a} />
             ))}
           </div>
         </div>
