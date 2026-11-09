@@ -112,42 +112,74 @@ async function TimerContent() {
               Nenhuma sessão registrada ainda. Inicie o cronômetro acima!
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Matéria</TableHead>
-                  <TableHead>Tópico</TableHead>
-                  <TableHead>Atividade</TableHead>
-                  <TableHead>Início</TableHead>
-                  <TableHead className="text-right">Duração</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <div className="flex flex-col divide-y md:hidden">
                 {sessions.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">
-                      {s.subject_name}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground max-w-50 truncate">
-                      {s.topic_name ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {ACTIVITY_LABELS[s.activity]}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDateTime(s.started_at)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatDuration(s.duration_sec)}
-                    </TableCell>
-                    <TableCell>
+                  <div
+                    key={s.id}
+                    className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="truncate text-sm font-medium">
+                        {s.subject_name}
+                      </span>
+                      <span className="text-muted-foreground truncate text-xs">
+                        {s.topic_name ?? "Sem tópico"}
+                      </span>
+                      <span className="text-muted-foreground mt-0.5 text-xs">
+                        {ACTIVITY_LABELS[s.activity]} ·{" "}
+                        {formatDateTime(s.started_at)}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <span className="text-sm tabular-nums">
+                        {formatDuration(s.duration_sec)}
+                      </span>
                       <DeleteSessionButton id={s.id} />
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Matéria</TableHead>
+                      <TableHead>Tópico</TableHead>
+                      <TableHead>Atividade</TableHead>
+                      <TableHead>Início</TableHead>
+                      <TableHead className="text-right">Duração</TableHead>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-medium">
+                          {s.subject_name}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground max-w-50 truncate">
+                          {s.topic_name ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {ACTIVITY_LABELS[s.activity]}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatDateTime(s.started_at)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatDuration(s.duration_sec)}
+                        </TableCell>
+                        <TableCell>
+                          <DeleteSessionButton id={s.id} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -116,3 +116,12 @@ export function toLocalDateKey(date: Date): string {
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
+
+/**
+ * Primeiro nome para saudações. Trunca tokens gigantes (ex.: quando o nome
+ * veio de um e-mail) para não quebrar títulos no mobile.
+ */
+export function firstName(name: string): string {
+  const token = name.trim().split(/\s+/)[0] ?? "";
+  return token.length > 18 ? `${token.slice(0, 17)}…` : token;
+}

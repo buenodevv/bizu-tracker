@@ -14,7 +14,7 @@ import {
 
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { formatMinutes, toLocalDateKey } from "@/lib/format";
+import { firstName, formatMinutes, toLocalDateKey } from "@/lib/format";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -129,7 +129,7 @@ async function DashboardStats() {
     <div className="flex flex-col gap-8">
       <div className="animate-fade-in">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Bem-vindo de volta, {user.name.split(" ")[0]}!
+          Bem-vindo de volta, {firstName(user.name)}!
         </h1>
         <p className="text-muted-foreground text-sm">
           Aqui está o resumo dos seus últimos 7 dias de estudo.

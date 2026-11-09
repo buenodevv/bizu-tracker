@@ -251,59 +251,102 @@ async function QuestionsContent() {
               Nenhuma questão registrada ainda. Use o painel acima para começar!
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Matéria</TableHead>
-                  <TableHead>Banca</TableHead>
-                  <TableHead>Nível</TableHead>
-                  <TableHead>Resultado</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <div className="flex flex-col divide-y md:hidden">
                 {recent.map((q) => (
-                  <TableRow key={q.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex flex-col">
-                        <span>{q.subject_name}</span>
-                        {q.notes ? (
-                          <span className="text-muted-foreground text-xs">
-                            {q.notes}
-                          </span>
-                        ) : null}
+                  <div
+                    key={q.id}
+                    className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-sm font-medium">
+                          {q.subject_name}
+                        </span>
+                        <Badge
+                          variant={
+                            q.result === "CORRECT"
+                              ? "default"
+                              : q.result === "WRONG"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          className="shrink-0"
+                        >
+                          {RESULT_LABELS[q.result]}
+                        </Badge>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {q.exam_board ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {LEVEL_LABELS[q.level]}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          q.result === "CORRECT"
-                            ? "default"
-                            : q.result === "WRONG"
-                              ? "destructive"
-                              : "secondary"
-                        }
-                      >
-                        {RESULT_LABELS[q.result]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground whitespace-nowrap">
-                      {formatDateTime(q.answered_at)}
-                    </TableCell>
-                    <TableCell>
-                      <DeleteQuestionButton id={q.id} />
-                    </TableCell>
-                  </TableRow>
+                      {q.notes ? (
+                        <span className="text-muted-foreground truncate text-xs">
+                          {q.notes}
+                        </span>
+                      ) : null}
+                      <span className="text-muted-foreground mt-0.5 text-xs">
+                        {q.exam_board ?? "Sem banca"} · {LEVEL_LABELS[q.level]} ·{" "}
+                        {formatDateTime(q.answered_at)}
+                      </span>
+                    </div>
+                    <DeleteQuestionButton id={q.id} />
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Matéria</TableHead>
+                      <TableHead>Banca</TableHead>
+                      <TableHead>Nível</TableHead>
+                      <TableHead>Resultado</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recent.map((q) => (
+                      <TableRow key={q.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col">
+                            <span>{q.subject_name}</span>
+                            {q.notes ? (
+                              <span className="text-muted-foreground text-xs">
+                                {q.notes}
+                              </span>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {q.exam_board ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {LEVEL_LABELS[q.level]}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              q.result === "CORRECT"
+                                ? "default"
+                                : q.result === "WRONG"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {RESULT_LABELS[q.result]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap">
+                          {formatDateTime(q.answered_at)}
+                        </TableCell>
+                        <TableCell>
+                          <DeleteQuestionButton id={q.id} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

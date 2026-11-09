@@ -41,6 +41,8 @@ async function SettingsContent() {
 
   const profile = profileRes.data;
   const areas = (areasRes.data ?? []) as AreaItem[];
+  const displayName =
+    profile?.name && !profile.name.includes("@") ? profile.name : user.name;
 
   return (
     <div className="flex flex-col gap-8">
@@ -60,7 +62,7 @@ async function SettingsContent() {
         </CardHeader>
         <CardContent>
           <AvatarUploader
-            name={profile?.name || user.name}
+            name={displayName}
             avatarUrl={profile?.avatar_url ?? user.avatarUrl}
           />
         </CardContent>
@@ -78,7 +80,7 @@ async function SettingsContent() {
         </CardHeader>
         <CardContent>
           <ProfileForm
-            name={profile?.name || user.name}
+            name={displayName}
             weeklyGoalMin={profile?.weekly_goal_min ?? 1200}
             timezone={profile?.timezone ?? "America/Sao_Paulo"}
           />

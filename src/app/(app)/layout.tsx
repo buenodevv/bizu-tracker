@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { requireUser } from "@/lib/auth";
+import { firstName } from "@/lib/format";
 import { Brand, MainNav } from "@/components/features/layout/main-nav";
 import { UserMenu } from "@/components/features/layout/user-menu";
 import { MobileNav } from "@/components/features/layout/mobile-nav";
@@ -17,7 +18,7 @@ async function UserHeader() {
           <MobileNav />
         </div>
         <span className="text-muted-foreground hidden text-sm md:inline">
-          Olá, {user.name.split(" ")[0]} 👋
+          Olá, {firstName(user.name)} 👋
         </span>
       </div>
       <UserMenu name={user.name} email={user.email} avatarUrl={user.avatarUrl} />
