@@ -26,7 +26,10 @@ export default function AuthLayout({
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex items-center justify-between gap-2">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
+          <Link
+            href="/"
+            className="font-display flex items-center gap-2 text-xl font-semibold"
+          >
             <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
               <BookOpenCheck className="size-4" />
             </div>
@@ -45,7 +48,7 @@ export default function AuthLayout({
 
         <div className="relative flex h-full flex-col justify-center gap-10 p-12">
           <blockquote className="space-y-4">
-            <p className="text-3xl leading-tight font-medium text-balance">
+            <p className="font-display text-4xl leading-tight font-medium text-balance">
               “Quem mede, melhora.”
             </p>
             <p className="text-base text-balance text-white/80">

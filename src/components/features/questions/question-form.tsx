@@ -146,6 +146,11 @@ export function QuestionForm({ subjects, boards }: Props) {
           </SelectContent>
         </Select>
       ) : null}
+      {subjects.length > 0 ? (
+        <p className="text-muted-foreground text-xs">
+          Ou digite uma matéria livre:
+        </p>
+      ) : null}
       <Input
         aria-label="Nome da matéria"
         placeholder="Ex.: Direito Constitucional"

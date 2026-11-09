@@ -24,6 +24,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 
 async function DashboardStats() {
   const user = await requireUser();
@@ -102,32 +103,36 @@ async function DashboardStats() {
       label: "Meta semanal",
       value: `${formatMinutes(minutesThisWeek)} / ${formatMinutes(weeklyGoal)}`,
       hint: `${goalPct}% da meta`,
+      progress: goalPct,
       icon: Target,
     },
     {
       label: "Questões (7 dias)",
       value: String(questions.length),
       hint: `${accuracy}% de acerto`,
+      progress: undefined,
       icon: ListChecks,
     },
     {
       label: "Áreas de estudo",
       value: String(areaCount),
-      hint: areaCount === 0 ? "Comece criando uma" : "ativas",
+      hint: areaCount === 0 ? "Comece criando uma" : areaCount === 1 ? "ativa" : "ativas",
+      progress: undefined,
       icon: BookOpenCheck,
     },
     {
       label: "Sequência",
       value: streak > 0 ? `${streak} ${streak === 1 ? "dia" : "dias"}` : "—",
-      hint: streak > 0 ? "de estudo seguidos 🔥" : "estude hoje para começar",
+      hint: streak > 0 ? "de estudo seguidos" : "estude hoje para começar",
+      progress: undefined,
       icon: TrendingUp,
     },
   ];
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="animate-fade-in">
-        <h1 className="text-2xl font-semibold tracking-tight">
+      <div>
+        <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight">
           Bem-vindo de volta, {firstName(user.name)}!
         </h1>
         <p className="text-muted-foreground text-sm">
@@ -136,12 +141,8 @@ async function DashboardStats() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {stats.map(({ label, value, hint, icon: Icon }, index) => (
-          <Card
-            key={label}
-            className="card-hover animate-fade-in-up"
-            style={{ animationDelay: `${index * 60}ms` }}
-          >
+        {stats.map(({ label, value, hint, progress, icon: Icon }) => (
+          <Card key={label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-muted-foreground text-sm font-medium">
                 {label}
@@ -153,6 +154,9 @@ async function DashboardStats() {
                 {value}
               </div>
               <p className="text-muted-foreground text-xs">{hint}</p>
+              {progress !== undefined ? (
+                <Progress value={progress} className="mt-3 h-1.5" />
+              ) : null}
             </CardContent>
           </Card>
         ))}
@@ -161,7 +165,7 @@ async function DashboardStats() {
       {areaCount === 0 ? (
         <Card className="border-dashed">
           <CardHeader>
-            <CardTitle>Vamos começar 🚀</CardTitle>
+            <CardTitle>Vamos começar</CardTitle>
             <CardDescription>
               Crie sua primeira área de estudo (concurso ou vestibular) para
               desbloquear cronômetro, questões, ciclos e edital verticalizado.
@@ -177,8 +181,8 @@ async function DashboardStats() {
       ) : null}
 
       <div>
-        <h2 className="mb-3 text-sm font-medium">Acesso rápido</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <h2 className="mb-3 text-sm font-medium">Atalhos</h2>
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
           {[
             {
               href: "/timer",
@@ -214,9 +218,9 @@ async function DashboardStats() {
             <Link
               key={href}
               href={href}
-              className="hover:bg-muted/50 hover:border-primary/30 group flex items-start gap-3 rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+              className="hover:bg-muted/50 hover:border-primary/30 group flex items-start gap-3 rounded-xl border p-4 transition-colors"
             >
-              <div className="bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary flex size-9 shrink-0 items-center justify-center rounded-lg transition-all duration-200 group-hover:scale-105">
+              <div className="bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors">
                 <Icon className="size-4" />
               </div>
               <div className="min-w-0">

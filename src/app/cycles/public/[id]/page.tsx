@@ -69,7 +69,10 @@ async function PublicCycleBody({
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-6">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
+        <Link
+          href="/"
+          className="font-display flex items-center gap-2 text-xl font-semibold"
+        >
           <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
             <BookOpenCheck className="size-4" />
           </div>
@@ -95,8 +98,8 @@ async function PublicCycleBody({
             <Badge variant="secondary">ciclo compartilhado</Badge>
           </CardTitle>
           <CardDescription>
-            {list.length} blocos · {formatMinutes(total)} · {cycle.period_days}{" "}
-            dias
+            {list.length} blocos, {formatMinutes(total)} no total, em{" "}
+            {cycle.period_days} dias
           </CardDescription>
         </CardHeader>
         {cycle.description ? (
@@ -140,8 +143,10 @@ async function PublicCycleBody({
                       >
                         <span className="truncate">{b.subject_name}</span>
                         <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-                          {b.minutes}min ·{" "}
-                          {ACTIVITY_LABELS[b.activity as ActivityType]}
+                          {b.minutes}min de{" "}
+                          {ACTIVITY_LABELS[
+                            b.activity as ActivityType
+                          ].toLowerCase()}
                         </span>
                       </div>
                     ))}
@@ -155,7 +160,7 @@ async function PublicCycleBody({
 
       <Card className="border-dashed">
         <CardHeader className="items-center text-center">
-          <div className="bg-muted text-muted-foreground mb-2 flex size-10 items-center justify-center rounded-lg">
+          <div className="bg-muted text-muted-foreground mx-auto mb-2 flex size-10 items-center justify-center rounded-lg">
             <Repeat className="size-5" />
           </div>
           <CardTitle className="text-base">
@@ -176,7 +181,7 @@ async function PublicCycleBody({
             />
           ) : (
             <Button render={<Link href="/register" />} nativeButton={false}>
-              Começar agora
+              Criar minha conta
             </Button>
           )}
         </CardContent>

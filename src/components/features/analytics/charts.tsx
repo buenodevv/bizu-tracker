@@ -90,10 +90,10 @@ export function HoursBySubjectChart({ data }: { data: HoursBySubjectDatum[] }) {
           <YAxis
             type="category"
             dataKey="subject_name"
-            width={140}
+            width={150}
             stroke="var(--muted-foreground)"
             fontSize={12}
-            tickFormatter={(v: string) => (v.length > 20 ? `${v.slice(0, 19)}…` : v)}
+            tickFormatter={(v: string) => (v.length > 24 ? `${v.slice(0, 23)}…` : v)}
           />
           <Tooltip
             content={<ChartTooltip formatter={(v) => formatMinutes(Number(v))} />}
@@ -208,10 +208,10 @@ export function AccuracyChart({ data }: { data: AccuracyDatum[] }) {
           <YAxis
             type="category"
             dataKey="subject_name"
-            width={140}
+            width={150}
             stroke="var(--muted-foreground)"
             fontSize={12}
-            tickFormatter={(v: string) => (v.length > 20 ? `${v.slice(0, 19)}…` : v)}
+            tickFormatter={(v: string) => (v.length > 24 ? `${v.slice(0, 23)}…` : v)}
           />
           <Tooltip
             content={

@@ -47,13 +47,15 @@ async function SettingsContent() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
+        <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight">
+          Configurações
+        </h1>
         <p className="text-muted-foreground text-sm">
           Ajuste suas preferências de estudo e seus dados.
         </p>
       </div>
 
-      <Card className="animate-fade-in-up">
+      <Card>
         <CardHeader>
           <CardTitle className="text-base">Foto de perfil</CardTitle>
           <CardDescription>

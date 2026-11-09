@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import {
+  BookOpenCheck,
   ChevronDown,
   ChevronRight,
   Check,
@@ -28,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IMPORTANCE_LABELS } from "@/lib/format";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { Importance } from "@/types/database";
 
 export type SubjectNode = {
@@ -79,9 +81,12 @@ export function EditalTree({ editalId, subjects, readOnly = false }: Props) {
   return (
     <div className="flex flex-col gap-3">
       {roots.length === 0 ? (
-        <p className="text-muted-foreground py-6 text-center text-sm">
-          Nenhuma disciplina ainda. Adicione a primeira abaixo.
-        </p>
+        <EmptyState
+          icon={BookOpenCheck}
+          title="Nenhuma disciplina ainda"
+          description="Adicione a primeira disciplina abaixo."
+          className="py-6"
+        />
       ) : (
         <div className="flex flex-col divide-y rounded-xl border">
           {roots.map((node) => (

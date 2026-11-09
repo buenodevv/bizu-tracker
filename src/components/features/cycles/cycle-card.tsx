@@ -112,7 +112,7 @@ export function CycleCard({
               ) : null}
             </CardTitle>
             <CardDescription>
-              {cycle.blocks.length} blocos · {formatMinutes(total)} ·{" "}
+              {cycle.blocks.length} blocos, {formatMinutes(total)} no total, em{" "}
               {cycle.period_days} dias
             </CardDescription>
           </div>
@@ -218,10 +218,9 @@ export function CycleCard({
                     >
                       <span className="truncate">{b.subject_name}</span>
                       <span className="shrink-0 tabular-nums">
-                        {b.minutes}min
+                        {b.minutes}min de{" "}
                         <span className="text-muted-foreground/60">
-                          {" "}
-                          · {ACTIVITY_LABELS[b.activity]}
+                          {ACTIVITY_LABELS[b.activity].toLowerCase()}
                         </span>
                       </span>
                     </div>

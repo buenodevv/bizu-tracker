@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -90,7 +91,9 @@ async function TimerContent() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Cronômetro</h1>
+        <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight">
+          Cronômetro
+        </h1>
         <p className="text-muted-foreground text-sm">
           Estude em foco e registre a sessão ao terminar.
         </p>
@@ -108,9 +111,11 @@ async function TimerContent() {
         </CardHeader>
         <CardContent>
           {sessions.length === 0 ? (
-            <p className="text-muted-foreground py-6 text-center text-sm">
-              Nenhuma sessão registrada ainda. Inicie o cronômetro acima!
-            </p>
+            <EmptyState
+              icon={History}
+              title="Nenhuma sessão ainda"
+              description="Inicie o cronômetro acima para registrar seu primeiro estudo."
+            />
           ) : (
             <>
               <div className="flex flex-col divide-y md:hidden">
@@ -127,7 +132,7 @@ async function TimerContent() {
                         {s.topic_name ?? "Sem tópico"}
                       </span>
                       <span className="text-muted-foreground mt-0.5 text-xs">
-                        {ACTIVITY_LABELS[s.activity]} ·{" "}
+                        {ACTIVITY_LABELS[s.activity]} em{" "}
                         {formatDateTime(s.started_at)}
                       </span>
                     </div>

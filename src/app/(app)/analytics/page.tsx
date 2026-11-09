@@ -142,7 +142,9 @@ async function AnalyticsContent({
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Rendimento</h1>
+          <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight">
+            Rendimento
+          </h1>
           <p className="text-muted-foreground text-sm">
             Horas e desempenho no período selecionado.
           </p>
@@ -168,12 +170,8 @@ async function AnalyticsContent({
       ) : null}
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {cards.map(({ label, value, hint, icon: Icon }, index) => (
-          <Card
-            key={label}
-            className="card-hover animate-fade-in-up"
-            style={{ animationDelay: `${index * 60}ms` }}
-          >
+        {cards.map(({ label, value, hint, icon: Icon }) => (
+          <Card key={label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-muted-foreground text-sm font-medium">
                 {label}
@@ -242,7 +240,7 @@ async function AnalyticsContent({
         <CardHeader>
           <CardTitle className="text-base">Acurácia por matéria</CardTitle>
           <CardDescription>
-            Matérias com menor acurácia aparecem primeiro — priorize-as na revisão.
+            Matérias com menor acurácia aparecem primeiro. Priorize-as na revisão.
           </CardDescription>
         </CardHeader>
         <CardContent>

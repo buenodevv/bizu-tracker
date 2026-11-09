@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -172,19 +173,17 @@ async function QuestionsContent() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Questões</h1>
+        <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight">
+          Questões
+        </h1>
         <p className="text-muted-foreground text-sm">
           Registre suas questões e acompanhe a acurácia por matéria.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {cards.map(({ label, value, hint, icon: Icon }, index) => (
-          <Card
-            key={label}
-            className="card-hover animate-fade-in-up"
-            style={{ animationDelay: `${index * 60}ms` }}
-          >
+        {cards.map(({ label, value, hint, icon: Icon }) => (
+          <Card key={label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-muted-foreground text-sm font-medium">
                 {label}
@@ -218,7 +217,7 @@ async function QuestionsContent() {
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="truncate font-medium">{s.name}</span>
                   <span className="text-muted-foreground shrink-0 tabular-nums">
-                    {s.accuracy}% · {s.correct}/{s.correct + s.wrong}
+                    {s.accuracy}% de acerto ({s.correct}/{s.correct + s.wrong})
                   </span>
                 </div>
                 <Progress
@@ -247,9 +246,11 @@ async function QuestionsContent() {
         </CardHeader>
         <CardContent>
           {recent.length === 0 ? (
-            <p className="text-muted-foreground py-6 text-center text-sm">
-              Nenhuma questão registrada ainda. Use o painel acima para começar!
-            </p>
+            <EmptyState
+              icon={ListChecks}
+              title="Nenhuma questão registrada"
+              description="Use o painel acima para lançar seu primeiro registro."
+            />
           ) : (
             <>
               <div className="flex flex-col divide-y md:hidden">
@@ -282,7 +283,7 @@ async function QuestionsContent() {
                         </span>
                       ) : null}
                       <span className="text-muted-foreground mt-0.5 text-xs">
-                        {q.exam_board ?? "Sem banca"} · {LEVEL_LABELS[q.level]} ·{" "}
+                        {q.exam_board ?? "Sem banca"}, {LEVEL_LABELS[q.level]},{" "}
                         {formatDateTime(q.answered_at)}
                       </span>
                     </div>

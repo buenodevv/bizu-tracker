@@ -256,7 +256,7 @@ export function CycleEditor({
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={generate} variant="secondary">
               <Wand2 className="size-4" />
-              Gerar do edital
+              Gerar a partir do edital
             </Button>
             <Button
               variant="outline"

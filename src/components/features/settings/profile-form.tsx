@@ -42,8 +42,9 @@ export function ProfileForm({
     FormData
   >(updateProfile, undefined);
 
-  // Exibe a meta em horas com uma casa decimal (ex.: 20,5).
-  const goalHours = (weeklyGoalMin / 60).toFixed(1).replace(".", ",");
+  // `type="number"` só aceita ponto; a vírgula fica para o texto de apoio.
+  const goalHours = (weeklyGoalMin / 60).toFixed(1);
+  const goalHoursLabel = goalHours.replace(".", ",");
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -66,7 +67,7 @@ export function ProfileForm({
             required
           />
           <p className="text-muted-foreground text-xs">
-            Atual: {goalHours}h por semana.
+            Atual: {goalHoursLabel}h por semana.
           </p>
         </div>
 
