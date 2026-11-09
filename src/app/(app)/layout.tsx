@@ -38,7 +38,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <MainNav />
         <div className="mt-auto flex flex-col gap-1 border-t p-4">
           <p className="text-muted-foreground text-xs">
-            Bizu Tracker v0.1
+            Bizu Tracker v0.2
           </p>
           <p className="text-muted-foreground text-xs leading-tight">
             © 2026 Rodrigo Bueno
