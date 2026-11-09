@@ -256,7 +256,7 @@ export function CycleEditor({
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={generate} variant="secondary">
               <Wand2 className="size-4" />
-              Gerar do edital
+              Gerar a partir do edital
             </Button>
             <Button
               variant="outline"
@@ -293,6 +293,30 @@ export function CycleEditor({
           const dayBlocks = blocks.filter((b) => b.day_of_cycle === day);
           const dayMinutes = perDay[day] ?? 0;
 
+          // Dia vazio: linha compacta em vez de um card alto — no mobile,
+          // vários cards vazios empurravam os ciclos salvos para muito abaixo.
+          if (dayBlocks.length === 0) {
+            return (
+              <button
+                key={day}
+                type="button"
+                onClick={() => addBlock(day)}
+                className="border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30 flex items-center justify-between gap-2 rounded-xl border border-dashed px-4 py-3 text-left transition-colors"
+              >
+                <span className="flex items-baseline gap-2">
+                  <span className="text-foreground text-sm font-medium">
+                    {DAY_LABELS[day] ?? `Dia ${day + 1}`}
+                  </span>
+                  <span className="text-xs">{formatMinutes(dayMinutes)}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-1 text-xs">
+                  <Plus className="size-3.5" />
+                  Adicionar bloco
+                </span>
+              </button>
+            );
+          }
+
           return (
             <Card key={day} size="sm">
               <CardHeader className="flex-row items-center justify-between">
@@ -322,12 +346,7 @@ export function CycleEditor({
                   />
                 </div>
 
-                {dayBlocks.length === 0 ? (
-                  <p className="text-muted-foreground py-3 text-center text-xs">
-                    Sem blocos
-                  </p>
-                ) : (
-                  dayBlocks.map((block) => (
+                {dayBlocks.map((block) => (
                     <div
                       key={block.key}
                       className="bg-muted/40 flex flex-col gap-2 rounded-lg border p-2"
@@ -440,8 +459,7 @@ export function CycleEditor({
                         </div>
                       </div>
                     </div>
-                  ))
-                )}
+                  ))}
               </CardContent>
             </Card>
           );

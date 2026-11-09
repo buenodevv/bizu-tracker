@@ -13,6 +13,30 @@ export type AuthUser = {
 };
 
 /**
+ * Nome de exibição. O trigger `handle_new_user` grava o e-mail como nome
+ * quando o cadastro não traz `name`; nesse caso derivamos algo legível da
+ * parte local em vez de mostrar o e-mail completo na interface.
+ */
+function resolveDisplayName(
+  profileName: string | null | undefined,
+  email: string | null | undefined,
+): string {
+  const name = profileName?.trim();
+  if (name && !name.includes("@")) return name;
+
+  const local = email?.split("@")[0]?.trim();
+  if (!local) return "Estudante";
+
+  return local
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/(^|\s)([a-z])/g, (_, space: string, letter: string) => {
+      return space + letter.toUpperCase();
+    });
+}
+
+/**
  * Obtém o usuário autenticado (ou redireciona para o login).
  *
  * `connection()` é obrigatório aqui: o SDK do Supabase Auth usa `Date.now()`
@@ -41,7 +65,7 @@ export async function requireUser(): Promise<AuthUser> {
   return {
     id: user.id,
     email: user.email ?? null,
-    name: profile?.name || user.email?.split("@")[0] || "Estudante",
+    name: resolveDisplayName(profile?.name, user.email),
     avatarUrl: profile?.avatar_url ?? null,
   };
 }
@@ -66,7 +90,7 @@ export async function getUser(): Promise<AuthUser | null> {
   return {
     id: user.id,
     email: user.email ?? null,
-    name: profile?.name || user.email?.split("@")[0] || "Estudante",
+    name: resolveDisplayName(profile?.name, user.email),
     avatarUrl: profile?.avatar_url ?? null,
   };
 }

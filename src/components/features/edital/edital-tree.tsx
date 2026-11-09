@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import {
+  BookOpenCheck,
   ChevronDown,
   ChevronRight,
   Check,
@@ -28,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IMPORTANCE_LABELS } from "@/lib/format";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { Importance } from "@/types/database";
 
 export type SubjectNode = {
@@ -79,9 +81,12 @@ export function EditalTree({ editalId, subjects, readOnly = false }: Props) {
   return (
     <div className="flex flex-col gap-3">
       {roots.length === 0 ? (
-        <p className="text-muted-foreground py-6 text-center text-sm">
-          Nenhuma disciplina ainda. Adicione a primeira abaixo.
-        </p>
+        <EmptyState
+          icon={BookOpenCheck}
+          title="Nenhuma disciplina ainda"
+          description="Adicione a primeira disciplina abaixo."
+          className="py-6"
+        />
       ) : (
         <div className="flex flex-col divide-y rounded-xl border">
           {roots.map((node) => (
@@ -150,7 +155,7 @@ function SubjectRow({
   return (
     <div>
       <div
-        className="flex items-center gap-2 px-3 py-2 hover:bg-muted/40"
+        className="hover:bg-muted/40 flex items-center gap-2 px-3 py-2"
         style={{ paddingLeft: `${12 + depth * 20}px` }}
       >
         <Button
@@ -159,7 +164,7 @@ function SubjectRow({
           aria-label={expanded ? "Recolher" : "Expandir"}
           onClick={() => setExpanded((v) => !v)}
           disabled={!hasChildren}
-          className={hasChildren ? "" : "invisible"}
+          className={hasChildren ? "shrink-0" : "invisible shrink-0"}
         >
           {expanded ? (
             <ChevronDown className="size-3.5" />
@@ -171,7 +176,7 @@ function SubjectRow({
         {editing ? (
           <Input
             autoFocus
-            className="h-7 max-w-sm"
+            className="h-7 min-w-0 flex-1 sm:max-w-sm"
             value={draftName}
             onChange={(e) => setDraftName(e.target.value)}
             onBlur={saveName}
@@ -186,7 +191,7 @@ function SubjectRow({
         ) : (
           <button
             type="button"
-            className="min-w-0 flex-1 truncate text-left text-sm"
+            className="min-w-0 flex-1 text-left text-sm break-words sm:truncate"
             onClick={() => !readOnly && setEditing(true)}
             title={readOnly ? node.name : "Clique para renomear"}
           >
@@ -200,7 +205,7 @@ function SubjectRow({
         )}
 
         {node.progress_studied > 0 ? (
-          <div className="hidden w-24 sm:block">
+          <div className="hidden w-24 shrink-0 sm:block">
             <Progress value={node.progress_studied} className="h-1.5" />
           </div>
         ) : null}
@@ -295,7 +300,11 @@ function ImportanceSelect({
         });
       }}
     >
-      <SelectTrigger size="sm" className="w-32 shrink-0" aria-label="Importância">
+      <SelectTrigger
+        size="sm"
+        className="w-28 shrink-0 sm:w-32"
+        aria-label="Importância"
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -342,7 +351,13 @@ function AddSubjectForm({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className={
+        compact
+          ? "flex items-center gap-2"
+          : "flex flex-col gap-2 sm:flex-row sm:items-center"
+      }
+    >
       <Input
         value={value}
         placeholder={placeholder}
@@ -359,6 +374,7 @@ function AddSubjectForm({
       />
       <Button
         size={compact ? "icon-xs" : "sm"}
+        className={compact ? undefined : "w-full sm:w-auto"}
         onClick={submit}
         disabled={!value.trim() || isPending}
         aria-label="Adicionar tópico"

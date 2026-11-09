@@ -1,10 +1,13 @@
 import { Suspense } from "react";
 
+import Link from "next/link";
 import {
+  BookOpenCheck,
   CalendarCheck,
   ListChecks,
   Target,
   Timer,
+  TrendingUp,
 } from "lucide-react";
 
 import { requireUser } from "@/lib/auth";
@@ -20,6 +23,8 @@ import {
   RangeSelector,
   type RangeKey,
 } from "@/components/features/analytics/range-selector";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Card,
   CardContent,
@@ -137,7 +142,9 @@ async function AnalyticsContent({
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Rendimento</h1>
+          <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight">
+            Rendimento
+          </h1>
           <p className="text-muted-foreground text-sm">
             Horas e desempenho no período selecionado.
           </p>
@@ -162,13 +169,9 @@ async function AnalyticsContent({
         </Card>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map(({ label, value, hint, icon: Icon }, index) => (
-          <Card
-            key={label}
-            className="card-hover animate-fade-in-up"
-            style={{ animationDelay: `${index * 60}ms` }}
-          >
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {cards.map(({ label, value, hint, icon: Icon }) => (
+          <Card key={label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-muted-foreground text-sm font-medium">
                 {label}
@@ -195,9 +198,21 @@ async function AnalyticsContent({
             {hasSessions ? (
               <HoursBySubjectChart data={bySubject} />
             ) : (
-              <p className="text-muted-foreground py-10 text-center text-sm">
-                Sem sessões no período. Use o cronômetro para começar.
-              </p>
+              <EmptyState
+                icon={Timer}
+                title="Sem sessões no período"
+                description="Use o cronômetro para registrar seu primeiro estudo."
+                action={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={<Link href="/timer" />}
+                    nativeButton={false}
+                  >
+                    Abrir cronômetro
+                  </Button>
+                }
+              />
             )}
           </CardContent>
         </Card>
@@ -211,9 +226,11 @@ async function AnalyticsContent({
             {hasSessions ? (
               <HoursByDayChart data={byDay} />
             ) : (
-              <p className="text-muted-foreground py-10 text-center text-sm">
-                Sem sessões no período.
-              </p>
+              <EmptyState
+                icon={TrendingUp}
+                title="Sem evolução ainda"
+                description="Assim que houver sessões, seu progresso diário aparece aqui."
+              />
             )}
           </CardContent>
         </Card>
@@ -223,11 +240,29 @@ async function AnalyticsContent({
         <CardHeader>
           <CardTitle className="text-base">Acurácia por matéria</CardTitle>
           <CardDescription>
-            Matérias com menor acurácia aparecem primeiro — priorize-as na revisão.
+            Matérias com menor acurácia aparecem primeiro. Priorize-as na revisão.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AccuracyChart data={accuracy} />
+          {accuracy.length === 0 ? (
+            <EmptyState
+              icon={ListChecks}
+              title="Nenhuma questão no período"
+              description="Registre questões para acompanhar sua acurácia por matéria."
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={<Link href="/questions" />}
+                  nativeButton={false}
+                >
+                  Registrar questões
+                </Button>
+              }
+            />
+          ) : (
+            <AccuracyChart data={accuracy} />
+          )}
         </CardContent>
       </Card>
 
@@ -240,7 +275,25 @@ async function AnalyticsContent({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <HoursByTopicChart data={byTopic} />
+            {byTopic.length === 0 ? (
+              <EmptyState
+                icon={Timer}
+                title="Nenhum tópico registrado"
+                description="Escolha um tópico ao usar o cronômetro para ver onde seu tempo foi investido."
+                action={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={<Link href="/timer" />}
+                    nativeButton={false}
+                  >
+                    Registrar sessão
+                  </Button>
+                }
+              />
+            ) : (
+              <HoursByTopicChart data={byTopic} />
+            )}
           </CardContent>
         </Card>
 
@@ -253,9 +306,21 @@ async function AnalyticsContent({
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {coverage.length === 0 ? (
-              <p className="text-muted-foreground py-10 text-center text-sm">
-                Adicione tópicos ao seu edital para ver a cobertura.
-              </p>
+              <EmptyState
+                icon={BookOpenCheck}
+                title="Sem cobertura ainda"
+                description="Adicione tópicos ao edital para acompanhar o quanto já concluiu."
+                action={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={<Link href="/edital" />}
+                    nativeButton={false}
+                  >
+                    Abrir edital
+                  </Button>
+                }
+              />
             ) : (
               coverage.map((c) => (
                 <div key={c.subject_name} className="flex flex-col gap-1.5">
@@ -287,7 +352,7 @@ export default function AnalyticsPage({
       fallback={
         <div className="flex flex-col gap-6">
           <Skeleton className="h-8 w-48" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-28 rounded-xl" />
             ))}

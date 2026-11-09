@@ -9,6 +9,14 @@ import type { Database } from "@/types/database";
  *
  * No Next.js 16 o antigo `middleware.ts` passou a se chamar `proxy.ts`.
  */
+/**
+ * Compara rotas por segmento completo: `/auth` casa `/auth` e `/auth/...`,
+ * mas não `/authors` ou `/authentication`.
+ */
+function matchesRoute(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -43,15 +51,17 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthRoute =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/register") ||
-    pathname.startsWith("/auth");
+    matchesRoute(pathname, "/login") ||
+    matchesRoute(pathname, "/register") ||
+    matchesRoute(pathname, "/forgot-password") ||
+    matchesRoute(pathname, "/auth");
 
   // Rotas públicas, que não exigem sessão:
   // - /cycles/public/... → compartilhamento de ciclos
   // - /api/health        → healthcheck do container (nunca deve redirecionar)
   const isPublicRoute =
-    pathname.startsWith("/cycles/public") || pathname.startsWith("/api/health");
+    matchesRoute(pathname, "/cycles/public") ||
+    matchesRoute(pathname, "/api/health");
 
   // Usuário não autenticado tentando acessar área protegida.
   if (!user && !isAuthRoute && !isPublicRoute) {

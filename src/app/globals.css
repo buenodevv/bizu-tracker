@@ -88,6 +88,7 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
+  --font-display: var(--font-space);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -139,7 +140,7 @@
    Tema claro — índigo como cor de destaque, gráficos coloridos.
    ========================================================================== */
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(0.985 0.004 265);
   --foreground: oklch(0.16 0.012 265);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.16 0.012 265);
@@ -171,7 +172,7 @@
 
   --radius: 0.7rem;
 
-  --sidebar: oklch(0.985 0.004 265);
+  --sidebar: oklch(0.968 0.006 265);
   --sidebar-foreground: oklch(0.24 0.02 267);
   --sidebar-primary: oklch(0.52 0.19 267);
   --sidebar-primary-foreground: oklch(0.99 0 0);
@@ -253,14 +254,6 @@
   /* Entrada escalonada: aplique com style={{ animationDelay }}. */
   .stagger-item {
     animation: var(--animate-list-item);
-  }
-
-  /* Cartão com leve elevação ao passar o mouse. */
-  .card-hover {
-    @apply transition-all duration-200 ease-out;
-  }
-  .card-hover:hover {
-    @apply -translate-y-0.5 shadow-md ring-foreground/15;
   }
 
   /* Barra de progresso com brilho sutil quando há atividade. */

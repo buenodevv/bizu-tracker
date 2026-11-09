@@ -3,12 +3,14 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 import {
+  extractedEditalSchema,
   getLlmProvider,
   hasUsefulTopics,
   LlmNotConfiguredError,
   normalizeEditalText,
   type ExtractedEdital,
 } from "@/lib/ai/extract-edital";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 /** Hash estável do conteúdo, usado como chave de cache. */
@@ -42,39 +44,46 @@ export async function extractEditalWithCache(
   }
 
   const contentHash = hashEditalText(rawText);
-  const supabase = await createClient();
 
-  // 1. Tenta o cache — mas só aceita entradas com tópicos reais.
-  const { data: cached } = await supabase
-    .from("edital_extraction_cache")
-    .select("payload, provider")
-    .eq("content_hash", contentHash)
-    .maybeSingle();
+  // O cache é global (compartilhado entre usuários) e por isso é acessado
+  // apenas com a service role. Sem a chave configurada, operamos sem cache.
+  const cache = createAdminClient();
 
-  if (cached?.payload) {
-    const cachedData = cached.payload as ExtractedEdital;
+  // 1. Tenta o cache — mas só aceita entradas válidas e com tópicos reais.
+  if (cache) {
+    const { data: cached } = await cache
+      .from("edital_extraction_cache")
+      .select("payload, provider")
+      .eq("content_hash", contentHash)
+      .maybeSingle();
 
-    if (hasUsefulTopics(cachedData)) {
-      // Incremento best-effort do contador (não deve quebrar o fluxo).
-      void supabase
-        .rpc("bump_extraction_cache_hit", { _hash: contentHash })
-        .then(() => undefined, () => undefined);
+    if (cached?.payload) {
+      // O payload é jsonb gravado por outra execução: nunca confiar no cast.
+      const parsed = extractedEditalSchema.safeParse(cached.payload);
 
-      return {
-        data: cachedData,
-        fromCache: true,
-        provider: cached.provider ?? provider.name,
-      };
+      if (parsed.success && hasUsefulTopics(parsed.data)) {
+        // Incremento best-effort do contador (não deve quebrar o fluxo).
+        void cache
+          .rpc("bump_extraction_cache_hit", { _hash: contentHash })
+          .then(() => undefined, () => undefined);
+
+        return {
+          data: parsed.data,
+          fromCache: true,
+          provider: cached.provider ?? provider.name,
+        };
+      }
+      // Entrada inválida/rasa (payload corrompido ou versão antiga do prompt):
+      // ignorar e reprocessar.
     }
-    // Entrada rasa (gerada por versão antiga do prompt): ignorar e reprocessar.
   }
 
   // 2. Chama a IA
   const data = await provider.extractEdital(rawText);
 
   // 3. Só cacheia resultados com tópicos — evita propagar extração rasa.
-  if (hasUsefulTopics(data)) {
-    void supabase
+  if (cache && hasUsefulTopics(data)) {
+    void cache
       .from("edital_extraction_cache")
       .insert({
         content_hash: contentHash,

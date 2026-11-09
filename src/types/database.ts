@@ -420,6 +420,10 @@ export interface Database {
         Args: { _hash: string };
         Returns: undefined;
       };
+      consume_extraction_quota: {
+        Args: Record<string, never>;
+        Returns: { allowed: boolean; remaining: number }[];
+      };
       sync_topic_progress: {
         Args: { _topic_id: string };
         Returns: undefined;

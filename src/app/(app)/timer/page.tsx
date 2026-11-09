@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -90,7 +91,9 @@ async function TimerContent() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Cronômetro</h1>
+        <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight">
+          Cronômetro
+        </h1>
         <p className="text-muted-foreground text-sm">
           Estude em foco e registre a sessão ao terminar.
         </p>
@@ -108,46 +111,80 @@ async function TimerContent() {
         </CardHeader>
         <CardContent>
           {sessions.length === 0 ? (
-            <p className="text-muted-foreground py-6 text-center text-sm">
-              Nenhuma sessão registrada ainda. Inicie o cronômetro acima!
-            </p>
+            <EmptyState
+              icon={History}
+              title="Nenhuma sessão ainda"
+              description="Inicie o cronômetro acima para registrar seu primeiro estudo."
+            />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Matéria</TableHead>
-                  <TableHead>Tópico</TableHead>
-                  <TableHead>Atividade</TableHead>
-                  <TableHead>Início</TableHead>
-                  <TableHead className="text-right">Duração</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <div className="flex flex-col divide-y md:hidden">
                 {sessions.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-medium">
-                      {s.subject_name}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground max-w-50 truncate">
-                      {s.topic_name ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {ACTIVITY_LABELS[s.activity]}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {formatDateTime(s.started_at)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatDuration(s.duration_sec)}
-                    </TableCell>
-                    <TableCell>
+                  <div
+                    key={s.id}
+                    className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="truncate text-sm font-medium">
+                        {s.subject_name}
+                      </span>
+                      <span className="text-muted-foreground truncate text-xs">
+                        {s.topic_name ?? "Sem tópico"}
+                      </span>
+                      <span className="text-muted-foreground mt-0.5 text-xs">
+                        {ACTIVITY_LABELS[s.activity]} em{" "}
+                        {formatDateTime(s.started_at)}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <span className="text-sm tabular-nums">
+                        {formatDuration(s.duration_sec)}
+                      </span>
                       <DeleteSessionButton id={s.id} />
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Matéria</TableHead>
+                      <TableHead>Tópico</TableHead>
+                      <TableHead>Atividade</TableHead>
+                      <TableHead>Início</TableHead>
+                      <TableHead className="text-right">Duração</TableHead>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="font-medium">
+                          {s.subject_name}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground max-w-50 truncate">
+                          {s.topic_name ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {ACTIVITY_LABELS[s.activity]}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatDateTime(s.started_at)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {formatDuration(s.duration_sec)}
+                        </TableCell>
+                        <TableCell>
+                          <DeleteSessionButton id={s.id} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

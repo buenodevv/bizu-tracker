@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { Brand, MainNav } from "@/components/features/layout/main-nav";
 import { UserMenu } from "@/components/features/layout/user-menu";
 import { MobileNav } from "@/components/features/layout/mobile-nav";
+import { ThemeToggle } from "@/components/features/layout/theme-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageTransition } from "@/components/features/layout/page-transition";
 
@@ -16,11 +17,15 @@ async function UserHeader() {
         <div className="md:hidden">
           <MobileNav />
         </div>
-        <span className="text-muted-foreground hidden text-sm md:inline">
-          Olá, {user.name.split(" ")[0]} 👋
-        </span>
       </div>
-      <UserMenu name={user.name} email={user.email} avatarUrl={user.avatarUrl} />
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
+        <UserMenu
+          name={user.name}
+          email={user.email}
+          avatarUrl={user.avatarUrl}
+        />
+      </div>
     </header>
   );
 }
@@ -33,14 +38,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <MainNav />
         <div className="mt-auto flex flex-col gap-1 border-t p-4">
           <p className="text-muted-foreground text-xs">
-            Bizu Tracker · v0.1
+            Bizu Tracker v0.1
           </p>
-          <p className="text-muted-foreground/70 text-[11px] leading-tight">
+          <p className="text-muted-foreground text-xs leading-tight">
             © 2026 Rodrigo Bueno
           </p>
           <a
             href="mailto:rodrigojbueno@yahoo.com.br"
-            className="text-muted-foreground/70 hover:text-foreground text-[11px] leading-tight underline-offset-2 transition-colors hover:underline"
+            className="text-muted-foreground hover:text-foreground text-xs leading-tight underline-offset-2 transition-colors hover:underline"
           >
             Dúvidas e sugestões
           </a>

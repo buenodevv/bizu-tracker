@@ -93,7 +93,7 @@ async function EditalContent() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight">
             Edital verticalizado
           </h1>
           <p className="text-muted-foreground text-sm">
@@ -106,7 +106,7 @@ async function EditalContent() {
       {areas.length === 0 ? (
         <Card className="border-dashed">
           <CardHeader className="items-center text-center">
-            <div className="bg-muted text-muted-foreground mb-2 flex size-10 items-center justify-center rounded-lg">
+            <div className="bg-muted text-muted-foreground mx-auto mb-2 flex size-10 items-center justify-center rounded-lg">
               <ClipboardList className="size-5" />
             </div>
             <CardTitle className="text-base">
@@ -139,8 +139,8 @@ async function EditalContent() {
                   </CardTitle>
                   <CardDescription>
                     {areaEditais.length === 0
-                      ? "Nenhum edital ainda — crie um abaixo."
-                      : `${areaEditais.length} edital(is)`}
+                      ? "Nenhum edital ainda. Crie um abaixo."
+                      : `${areaEditais.length} ${areaEditais.length === 1 ? "edital" : "editais"}`}
                   </CardDescription>
                 </CardHeader>
 

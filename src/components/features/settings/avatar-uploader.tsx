@@ -112,7 +112,7 @@ export function AvatarUploader({
         }}
       >
         <p className="text-sm font-medium">
-          {isDragging ? "Solte a imagem aqui" : "Foto de perfil"}
+          {isDragging ? "Solte a imagem aqui" : "Enviar imagem"}
         </p>
         <p className="text-muted-foreground text-xs">
           Arraste uma imagem ou escolha um arquivo. PNG, JPG, WEBP ou GIF até

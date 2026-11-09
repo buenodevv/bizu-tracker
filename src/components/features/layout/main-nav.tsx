@@ -38,7 +38,7 @@ export function MainNav() {
             key={href}
             href={href}
             className={cn(
-              "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-200",
+              "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors duration-200",
               active
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
@@ -51,12 +51,7 @@ export function MainNav() {
                 active ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0",
               )}
             />
-            <Icon
-              className={cn(
-                "size-4 shrink-0 transition-transform duration-200",
-                active ? "" : "group-hover:scale-110",
-              )}
-            />
+            <Icon className="size-4 shrink-0" />
             {label}
           </Link>
         );
@@ -71,10 +66,12 @@ export function Brand() {
       href="/dashboard"
       className="group flex items-center gap-2 px-4 py-4 transition-opacity hover:opacity-90"
     >
-      <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg shadow-sm transition-transform duration-200 group-hover:scale-105">
+      <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
         <BookOpenCheck className="size-4" />
       </div>
-      <span className="font-semibold tracking-tight">Bizu Tracker</span>
+      <span className="font-display text-lg font-semibold tracking-tight">
+        Bizu Tracker
+      </span>
     </Link>
   );
 }

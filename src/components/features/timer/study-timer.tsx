@@ -192,7 +192,7 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       {/* Relógio */}
       <Card
-        className={`animate-fade-in-up transition-shadow duration-500 ${
+        className={`transition-shadow duration-500 ${
           isRunning ? "timer-glow" : ""
         }`}
       >
@@ -202,8 +202,8 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
               <CardTitle>{mode === "pomodoro" ? "Pomodoro" : "Cronômetro"}</CardTitle>
               <CardDescription>
                 {mode === "pomodoro"
-                  ? `Fase atual: ${PHASE_LABELS[phase]} · ciclos ${cycleLabel}`
-                  : "Tempo livre — pare quando quiser e salve a sessão."}
+                  ? `Fase atual: ${PHASE_LABELS[phase]}, ciclos ${cycleLabel}`
+                  : "Tempo livre: pare quando quiser e salve a sessão."}
               </CardDescription>
             </div>
             <div className="flex items-center gap-1">
@@ -304,7 +304,7 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
 
           {!canStart ? (
             <p className="text-muted-foreground text-center text-sm">
-              Selecione a matéria ao lado para começar.
+              Selecione a matéria para começar.
             </p>
           ) : null}
         </CardContent>

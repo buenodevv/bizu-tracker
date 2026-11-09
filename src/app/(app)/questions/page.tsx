@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Table,
   TableBody,
@@ -172,19 +173,17 @@ async function QuestionsContent() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Questões</h1>
+        <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight">
+          Questões
+        </h1>
         <p className="text-muted-foreground text-sm">
           Registre suas questões e acompanhe a acurácia por matéria.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map(({ label, value, hint, icon: Icon }, index) => (
-          <Card
-            key={label}
-            className="card-hover animate-fade-in-up"
-            style={{ animationDelay: `${index * 60}ms` }}
-          >
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {cards.map(({ label, value, hint, icon: Icon }) => (
+          <Card key={label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-muted-foreground text-sm font-medium">
                 {label}
@@ -218,7 +217,7 @@ async function QuestionsContent() {
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="truncate font-medium">{s.name}</span>
                   <span className="text-muted-foreground shrink-0 tabular-nums">
-                    {s.accuracy}% · {s.correct}/{s.correct + s.wrong}
+                    {s.accuracy}% de acerto ({s.correct}/{s.correct + s.wrong})
                   </span>
                 </div>
                 <Progress
@@ -247,63 +246,108 @@ async function QuestionsContent() {
         </CardHeader>
         <CardContent>
           {recent.length === 0 ? (
-            <p className="text-muted-foreground py-6 text-center text-sm">
-              Nenhuma questão registrada ainda. Use o painel acima para começar!
-            </p>
+            <EmptyState
+              icon={ListChecks}
+              title="Nenhuma questão registrada"
+              description="Use o painel acima para lançar seu primeiro registro."
+            />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Matéria</TableHead>
-                  <TableHead>Banca</TableHead>
-                  <TableHead>Nível</TableHead>
-                  <TableHead>Resultado</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              <div className="flex flex-col divide-y md:hidden">
                 {recent.map((q) => (
-                  <TableRow key={q.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex flex-col">
-                        <span>{q.subject_name}</span>
-                        {q.notes ? (
-                          <span className="text-muted-foreground text-xs">
-                            {q.notes}
-                          </span>
-                        ) : null}
+                  <div
+                    key={q.id}
+                    className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                  >
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-sm font-medium">
+                          {q.subject_name}
+                        </span>
+                        <Badge
+                          variant={
+                            q.result === "CORRECT"
+                              ? "default"
+                              : q.result === "WRONG"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          className="shrink-0"
+                        >
+                          {RESULT_LABELS[q.result]}
+                        </Badge>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {q.exam_board ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {LEVEL_LABELS[q.level]}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          q.result === "CORRECT"
-                            ? "default"
-                            : q.result === "WRONG"
-                              ? "destructive"
-                              : "secondary"
-                        }
-                      >
-                        {RESULT_LABELS[q.result]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground whitespace-nowrap">
-                      {formatDateTime(q.answered_at)}
-                    </TableCell>
-                    <TableCell>
-                      <DeleteQuestionButton id={q.id} />
-                    </TableCell>
-                  </TableRow>
+                      {q.notes ? (
+                        <span className="text-muted-foreground truncate text-xs">
+                          {q.notes}
+                        </span>
+                      ) : null}
+                      <span className="text-muted-foreground mt-0.5 text-xs">
+                        {q.exam_board ?? "Sem banca"}, {LEVEL_LABELS[q.level]},{" "}
+                        {formatDateTime(q.answered_at)}
+                      </span>
+                    </div>
+                    <DeleteQuestionButton id={q.id} />
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Matéria</TableHead>
+                      <TableHead>Banca</TableHead>
+                      <TableHead>Nível</TableHead>
+                      <TableHead>Resultado</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recent.map((q) => (
+                      <TableRow key={q.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col">
+                            <span>{q.subject_name}</span>
+                            {q.notes ? (
+                              <span className="text-muted-foreground text-xs">
+                                {q.notes}
+                              </span>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {q.exam_board ?? "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {LEVEL_LABELS[q.level]}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              q.result === "CORRECT"
+                                ? "default"
+                                : q.result === "WRONG"
+                                  ? "destructive"
+                                  : "secondary"
+                            }
+                          >
+                            {RESULT_LABELS[q.result]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap">
+                          {formatDateTime(q.answered_at)}
+                        </TableCell>
+                        <TableCell>
+                          <DeleteQuestionButton id={q.id} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -317,7 +361,7 @@ export default function QuestionsPage() {
       fallback={
         <div className="flex flex-col gap-6">
           <Skeleton className="h-8 w-48" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-28 rounded-xl" />
             ))}

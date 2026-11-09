@@ -7,8 +7,15 @@ import { login, type AuthActionState } from "@/app/(auth)/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
-export function LoginForm({ redirectTo }: { redirectTo?: string }) {
+export function LoginForm({
+  redirectTo,
+  error,
+}: {
+  redirectTo?: string;
+  error?: string;
+}) {
   const [state, formAction, isPending] = useActionState<
     AuthActionState,
     FormData
@@ -25,6 +32,17 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 
       <input type="hidden" name="redirectTo" value={redirectTo ?? "/dashboard"} />
 
+      {error ? (
+        <p
+          role="alert"
+          className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-sm"
+        >
+          {error === "recovery"
+            ? "O link de recuperação expirou. Solicite um novo."
+            : "Não foi possível confirmar sua conta. Tente entrar novamente."}
+        </p>
+      ) : null}
+
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="email">E-mail</Label>
@@ -39,13 +57,18 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         </div>
 
         <div className="grid gap-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <Label htmlFor="password">Senha</Label>
+            <Link
+              href="/forgot-password"
+              className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
+            >
+              Esqueci minha senha
+            </Link>
           </div>
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             placeholder="••••••••"
             autoComplete="current-password"
             required
