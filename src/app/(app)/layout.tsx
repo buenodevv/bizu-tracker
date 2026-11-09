@@ -5,6 +5,7 @@ import { firstName } from "@/lib/format";
 import { Brand, MainNav } from "@/components/features/layout/main-nav";
 import { UserMenu } from "@/components/features/layout/user-menu";
 import { MobileNav } from "@/components/features/layout/mobile-nav";
+import { ThemeToggle } from "@/components/features/layout/theme-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageTransition } from "@/components/features/layout/page-transition";
 
@@ -21,7 +22,14 @@ async function UserHeader() {
           Olá, {firstName(user.name)} 👋
         </span>
       </div>
-      <UserMenu name={user.name} email={user.email} avatarUrl={user.avatarUrl} />
+      <div className="flex items-center gap-1">
+        <ThemeToggle />
+        <UserMenu
+          name={user.name}
+          email={user.email}
+          avatarUrl={user.avatarUrl}
+        />
+      </div>
     </header>
   );
 }
