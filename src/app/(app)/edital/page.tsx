@@ -140,7 +140,7 @@ async function EditalContent() {
                   <CardDescription>
                     {areaEditais.length === 0
                       ? "Nenhum edital ainda — crie um abaixo."
-                      : `${areaEditais.length} edital(is)`}
+                      : `${areaEditais.length} ${areaEditais.length === 1 ? "edital" : "editais"}`}
                   </CardDescription>
                 </CardHeader>
 

@@ -36,12 +36,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <p className="text-muted-foreground text-xs">
             Bizu Tracker · v0.1
           </p>
-          <p className="text-muted-foreground/70 text-[11px] leading-tight">
+          <p className="text-muted-foreground text-xs leading-tight">
             © 2026 Rodrigo Bueno
           </p>
           <a
             href="mailto:rodrigojbueno@yahoo.com.br"
-            className="text-muted-foreground/70 hover:text-foreground text-[11px] leading-tight underline-offset-2 transition-colors hover:underline"
+            className="text-muted-foreground hover:text-foreground text-xs leading-tight underline-offset-2 transition-colors hover:underline"
           >
             Dúvidas e sugestões
           </a>

@@ -114,13 +114,15 @@ async function SettingsContent() {
           <CardDescription>Dados da sua autenticação.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-1 text-sm">
-          <div className="flex justify-between gap-3">
-            <span className="text-muted-foreground">E-mail</span>
-            <span className="truncate font-medium">{user.email ?? "—"}</span>
+          <div className="flex items-start justify-between gap-3">
+            <span className="text-muted-foreground shrink-0">E-mail</span>
+            <span className="min-w-0 truncate text-right font-medium">
+              {user.email ?? "—"}
+            </span>
           </div>
-          <div className="flex justify-between gap-3">
-            <span className="text-muted-foreground">ID</span>
-            <span className="text-muted-foreground truncate font-mono text-xs">
+          <div className="flex items-start justify-between gap-3">
+            <span className="text-muted-foreground shrink-0">ID</span>
+            <span className="text-muted-foreground min-w-0 truncate text-right font-mono text-xs">
               {user.id}
             </span>
           </div>

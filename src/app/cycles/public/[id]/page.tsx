@@ -182,7 +182,7 @@ async function PublicCycleBody({
         </CardContent>
       </Card>
 
-      <footer className="text-muted-foreground/70 flex flex-col items-center gap-1 pt-2 pb-4 text-xs">
+      <footer className="text-muted-foreground flex flex-col items-center gap-1 pt-2 pb-4 text-xs">
         <p>© 2026 Rodrigo Bueno</p>
         <p>
           Dúvidas e sugestões:{" "}

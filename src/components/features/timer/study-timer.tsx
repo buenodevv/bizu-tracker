@@ -304,7 +304,7 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
 
           {!canStart ? (
             <p className="text-muted-foreground text-center text-sm">
-              Selecione a matéria ao lado para começar.
+              Selecione a matéria para começar.
             </p>
           ) : null}
         </CardContent>

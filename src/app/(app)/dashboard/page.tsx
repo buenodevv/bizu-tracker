@@ -15,7 +15,6 @@ import {
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { firstName, formatMinutes, toLocalDateKey } from "@/lib/format";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -228,10 +227,6 @@ async function DashboardStats() {
           ))}
         </div>
       </div>
-
-      <Badge variant="outline" className="text-muted-foreground w-fit">
-        MVP em construção · Fase 0
-      </Badge>
     </div>
   );
 }
