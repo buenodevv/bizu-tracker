@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 
 import {
   Pause,
@@ -32,12 +32,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { useTimerNow } from "@/components/features/timer/timer-provider";
 import { ACTIVITY_LABELS, formatClock, formatDuration } from "@/lib/format";
+import { primeTimerAudio } from "@/lib/timer-audio";
 import {
   getElapsedSeconds,
   getPhaseTotalSeconds,
+  PHASE_LABELS,
   useTimerStore,
-  type Phase,
 } from "@/store/timer-store";
 import type { ActivityType } from "@/types/database";
 
@@ -53,13 +56,8 @@ export type SubjectOption = {
   topics: TopicOption[];
 };
 
-const PHASE_LABELS: Record<Phase, string> = {
-  focus: "Foco",
-  shortBreak: "Pausa curta",
-  longBreak: "Pausa longa",
-};
-
 export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
+  const state = useTimerStore();
   const {
     mode,
     setMode,
@@ -73,40 +71,21 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
     setPomodoro,
     phase,
     completedFocusSessions,
+    soundEnabled,
+    setSoundEnabled,
     start,
     pause,
     resume,
     reset,
     finish,
-    tick,
-  } = useTimerStore();
+  } = state;
 
-  const [, forceRender] = useState(0);
+  const now = useTimerNow();
   const [isSaving, startTransition] = useTransition();
   const [showSettings, setShowSettings] = useState(false);
   const [lastSaved, setLastSaved] = useState<number | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Re-renderiza a cada segundo enquanto roda; o estado do relógio fica no store.
-  useEffect(() => {
-    if (status !== "running") {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      intervalRef.current = null;
-      return;
-    }
-
-    intervalRef.current = setInterval(() => {
-      tick();
-      forceRender((n) => n + 1);
-    }, 250);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [status, tick]);
-
-  const state = useTimerStore.getState();
-  const elapsed = getElapsedSeconds(state);
+  const elapsed = getElapsedSeconds(state, now);
   const phaseTotal = getPhaseTotalSeconds(state);
 
   const displaySeconds = useMemo(() => {
@@ -161,31 +140,7 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
     });
   }, [finish, reset, startTransition]);
 
-  // Aviso sonoro + toast ao trocar de fase no pomodoro.
-  const prevPhase = useRef(phase);
-  useEffect(() => {
-    if (mode === "pomodoro" && prevPhase.current !== phase) {
-      const label = PHASE_LABELS[phase];
-      toast.info(`Pomodoro: hora de ${label.toLowerCase()}!`);
-      try {
-        const ctx = new AudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = 880;
-        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.6);
-      } catch {
-        // Áudio pode ser bloqueado pelo navegador; ignorar.
-      }
-      prevPhase.current = phase;
-    }
-  }, [phase, mode]);
-
+  // Aviso sonoro + troca de fase são tratados pelo TimerProvider global.
   const cycleLabel = `${completedFocusSessions}/${pomodoro.cyclesUntilLongBreak}`;
 
   return (
@@ -231,7 +186,7 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
           <div className="flex flex-col items-center gap-2">
             <div
               className={`font-mono text-6xl font-semibold tracking-tight tabular-nums transition-colors duration-300 sm:text-7xl ${
-                isRunning ? "text-primary animate-pulse-soft" : ""
+                isRunning ? "text-primary" : ""
               }`}
               aria-live="polite"
             >
@@ -259,7 +214,10 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
             {!isRunning && !isPaused && !isFinished ? (
               <Button
                 size="lg"
-                onClick={start}
+                onClick={() => {
+                  primeTimerAudio();
+                  start();
+                }}
                 disabled={!canStart}
                 title={canStart ? undefined : "Escolha a matéria primeiro"}
               >
@@ -276,7 +234,13 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
             ) : null}
 
             {isPaused ? (
-              <Button size="lg" onClick={resume}>
+              <Button
+                size="lg"
+                onClick={() => {
+                  primeTimerAudio();
+                  resume();
+                }}
+              >
                 <Play className="size-4" />
                 Retomar
               </Button>
@@ -454,45 +418,62 @@ export function StudyTimer({ subjects }: { subjects: SubjectOption[] }) {
                 <Settings2 className="size-4" />
               </Button>
             </CardHeader>
-            {showSettings ? (
-              <CardContent className="flex flex-col gap-3">
-                <div className="grid grid-cols-2 gap-3">
-                  {(
-                    [
-                      ["focusMin", "Foco (min)"],
-                      ["shortBreakMin", "Pausa curta"],
-                      ["longBreakMin", "Pausa longa"],
-                      ["cyclesUntilLongBreak", "Ciclos p/ longa"],
-                    ] as const
-                  ).map(([key, label]) => (
-                    <div key={key} className="grid gap-1.5">
-                      <Label htmlFor={key} className="text-xs">
-                        {label}
-                      </Label>
-                      <Input
-                        id={key}
-                        type="number"
-                        min={1}
-                        max={120}
-                        value={pomodoro[key]}
-                        onChange={(e) => {
-                          const n = Number(e.target.value);
-                          if (Number.isFinite(n) && n > 0) {
-                            setPomodoro({ [key]: n });
-                          }
-                        }}
-                        disabled={isRunning || isPaused}
-                        className="h-8"
-                      />
-                    </div>
-                  ))}
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="grid gap-1">
+                  <p className="text-sm font-medium">Aviso sonoro</p>
+                  <p className="text-muted-foreground text-xs">
+                    Um sinal curto quando a fase termina.
+                  </p>
                 </div>
-                <Separator />
-                <p className="text-muted-foreground text-xs">
-                  Sessões de foco concluídas: {completedFocusSessions}
-                </p>
-              </CardContent>
-            ) : null}
+                <Switch
+                  aria-label="Aviso sonoro"
+                  checked={soundEnabled}
+                  onCheckedChange={setSoundEnabled}
+                />
+              </div>
+
+              {showSettings ? (
+                <>
+                  <Separator />
+                  <div className="grid grid-cols-2 gap-3">
+                    {(
+                      [
+                        ["focusMin", "Foco (min)"],
+                        ["shortBreakMin", "Pausa curta"],
+                        ["longBreakMin", "Pausa longa"],
+                        ["cyclesUntilLongBreak", "Ciclos p/ longa"],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <div key={key} className="grid gap-1.5">
+                        <Label htmlFor={key} className="text-xs">
+                          {label}
+                        </Label>
+                        <Input
+                          id={key}
+                          type="number"
+                          min={1}
+                          max={120}
+                          value={pomodoro[key]}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (Number.isFinite(n) && n > 0) {
+                              setPomodoro({ [key]: n });
+                            }
+                          }}
+                          disabled={isRunning || isPaused}
+                          className="h-8"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <Separator />
+                  <p className="text-muted-foreground text-xs">
+                    Sessões de foco concluídas: {completedFocusSessions}
+                  </p>
+                </>
+              ) : null}
+            </CardContent>
           </Card>
         ) : null}
       </div>

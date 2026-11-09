@@ -12,6 +12,12 @@ export type TimerStatus = "idle" | "running" | "paused" | "finished";
 
 export type Phase = "focus" | "shortBreak" | "longBreak";
 
+export const PHASE_LABELS: Record<Phase, string> = {
+  focus: "Foco",
+  shortBreak: "Pausa curta",
+  longBreak: "Pausa longa",
+};
+
 export type PomodoroSettings = {
   focusMin: number;
   shortBreakMin: number;
@@ -42,6 +48,7 @@ type TimerState = {
   pomodoro: PomodoroSettings;
   phase: Phase;
   completedFocusSessions: number;
+  soundEnabled: boolean;
 
   // Ações
   setSessionConfig: (config: {
@@ -54,6 +61,7 @@ type TimerState = {
   }) => void;
   setMode: (mode: TimerMode) => void;
   setPomodoro: (settings: Partial<PomodoroSettings>) => void;
+  setSoundEnabled: (enabled: boolean) => void;
   start: () => void;
   pause: () => void;
   resume: () => void;
@@ -106,6 +114,7 @@ export const useTimerStore = create<TimerState>()(
       },
       phase: "focus",
       completedFocusSessions: 0,
+      soundEnabled: true,
 
       setSessionConfig: (config) =>
         set((state) => ({
@@ -127,6 +136,8 @@ export const useTimerStore = create<TimerState>()(
 
       setPomodoro: (settings) =>
         set((state) => ({ pomodoro: { ...state.pomodoro, ...settings } })),
+
+      setSoundEnabled: (enabled) => set({ soundEnabled: enabled }),
 
       start: () => {
         const state = get();
@@ -248,6 +259,7 @@ export const useTimerStore = create<TimerState>()(
         activity: state.activity,
         pomodoro: state.pomodoro,
         completedFocusSessions: state.completedFocusSessions,
+        soundEnabled: state.soundEnabled,
       }),
     },
   ),
