@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { ActivityType, Importance } from "@/types/database";
+import type { ActivityType, Importance, ProgressStatus } from "@/types/database";
 
 export const metadata = { title: "Ciclos" };
 
@@ -87,20 +87,75 @@ async function CyclesContent() {
 
   let subjects: EditorSubject[] = [];
   if (editalIds.length > 0) {
-    const { data } = await supabase
-      .from("edital_subjects")
-      .select("id, name, weight, importance")
-      .in("edital_id", editalIds)
-      .is("parent_id", null)
-      .order("sort_order")
-      .limit(50);
+    const [nodesRes, topicSessionsRes] = await Promise.all([
+      supabase
+        .from("edital_subjects")
+        .select(
+          "id, name, parent_id, weight, importance, status, sort_order",
+        )
+        .in("edital_id", editalIds)
+        .order("sort_order")
+        .order("name")
+        .limit(3000),
+      // Última sessão por tópico — alimenta a prioridade do gerador.
+      supabase
+        .from("study_sessions")
+        .select("topic_id, started_at")
+        .eq("user_id", user.id)
+        .not("topic_id", "is", null)
+        .order("started_at", { ascending: false })
+        .limit(1000),
+    ]);
 
-    subjects = (data ?? []).map((s) => ({
-      id: s.id,
-      name: s.name,
-      weight: s.weight === null ? null : Number(s.weight),
-      importance: s.importance as Importance,
-    }));
+    const nodes = nodesRes.data ?? [];
+
+    const lastStudiedByTopic = new Map<string, string>();
+    for (const row of topicSessionsRes.data ?? []) {
+      if (row.topic_id && !lastStudiedByTopic.has(row.topic_id)) {
+        lastStudiedByTopic.set(row.topic_id, row.started_at);
+      }
+    }
+
+    // Filhos diretos de cada nó (tópicos do 2º nível).
+    const childrenByParent = new Map<
+      string,
+      { id: string; name: string; status: ProgressStatus }[]
+    >();
+    for (const node of nodes) {
+      if (!node.parent_id) continue;
+      const list = childrenByParent.get(node.parent_id) ?? [];
+      list.push({
+        id: node.id,
+        name: node.name,
+        status: node.status as ProgressStatus,
+      });
+      childrenByParent.set(node.parent_id, list);
+    }
+
+    // Mesma matéria em editais diferentes: mantém a primeira ocorrência,
+    // como o cronômetro faz — evita duplicatas no seletor e no gerador.
+    const seen = new Set<string>();
+    for (const node of nodes) {
+      if (node.parent_id !== null) continue;
+      const key = node.name.trim().toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      subjects.push({
+        id: node.id,
+        name: node.name,
+        weight: node.weight === null ? null : Number(node.weight),
+        importance: node.importance as Importance,
+        topics: (childrenByParent.get(node.id) ?? []).map((topic) => ({
+          id: topic.id,
+          name: topic.name,
+          status: topic.status,
+          lastStudiedAt: lastStudiedByTopic.get(topic.id) ?? null,
+        })),
+      });
+    }
+
+    subjects = subjects.slice(0, 50);
   }
 
   const myCyclesRaw = (cyclesRes.data ?? []) as RawCycle[];
@@ -114,7 +169,7 @@ async function CyclesContent() {
   if (allIds.length > 0) {
     const { data: blocks } = await supabase
       .from("cycle_blocks")
-      .select("id, cycle_id, subject_id, subject_name, activity, minutes, day_of_cycle, sort_order")
+      .select("id, cycle_id, subject_id, subject_name, topic_id, topic_name, activity, minutes, day_of_cycle, sort_order")
       .in("cycle_id", allIds)
       .order("day_of_cycle")
       .order("sort_order");
@@ -125,6 +180,8 @@ async function CyclesContent() {
         id: b.id,
         subject_id: b.subject_id,
         subject_name: b.subject_name,
+        topic_id: b.topic_id,
+        topic_name: b.topic_name,
         activity: b.activity as ActivityType,
         minutes: b.minutes,
         day_of_cycle: b.day_of_cycle,
@@ -200,11 +257,7 @@ async function CyclesContent() {
             />
           ) : (
             myCycles.map((c) => (
-              <CycleCard
-                key={c.id}
-                cycle={c}
-                subjectNames={subjects.map((s) => s.name)}
-              />
+              <CycleCard key={c.id} cycle={c} subjects={subjects} />
             ))
           )}
         </TabsContent>
@@ -217,11 +270,7 @@ async function CyclesContent() {
             />
           ) : (
             publicCycles.map((c) => (
-              <CycleCard
-                key={c.id}
-                cycle={c}
-                subjectNames={subjects.map((s) => s.name)}
-              />
+              <CycleCard key={c.id} cycle={c} subjects={subjects} />
             ))
           )}
         </TabsContent>

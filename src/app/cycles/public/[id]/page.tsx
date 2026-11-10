@@ -54,7 +54,7 @@ async function PublicCycleBody({
 
   const { data: blocks } = await supabase
     .from("cycle_blocks")
-    .select("id, subject_name, activity, minutes, day_of_cycle, sort_order")
+    .select("id, subject_name, topic_name, activity, minutes, day_of_cycle, sort_order")
     .eq("cycle_id", id)
     .order("day_of_cycle")
     .order("sort_order");
@@ -139,9 +139,18 @@ async function PublicCycleBody({
                     {dayBlocks.map((b) => (
                       <div
                         key={b.id}
-                        className="flex items-center justify-between gap-2 text-sm"
+                        className="flex items-start justify-between gap-2 text-sm"
                       >
-                        <span className="truncate">{b.subject_name}</span>
+                        <div className="min-w-0">
+                          <span className="block truncate">
+                            {b.subject_name}
+                          </span>
+                          {b.topic_name ? (
+                            <span className="text-muted-foreground block truncate text-xs">
+                              {b.topic_name}
+                            </span>
+                          ) : null}
+                        </div>
                         <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
                           {b.minutes}min de{" "}
                           {ACTIVITY_LABELS[

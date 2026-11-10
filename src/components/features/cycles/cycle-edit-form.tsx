@@ -17,17 +17,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ACTIVITY_LABELS, formatMinutes } from "@/lib/format";
+import type { EditorSubject } from "@/components/features/cycles/cycle-editor";
 import type { ActivityType } from "@/types/database";
 
 export type EditBlock = {
   subject_id: string | null;
   subject_name: string;
+  topic_id: string | null;
+  topic_name: string | null;
   activity: ActivityType;
   minutes: number;
   day_of_cycle: number;
 };
 
 const DAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+/** Sentinela do Select para "sem tópico" (Select não aceita valor vazio). */
+const NO_TOPIC = "__none__";
 
 export function CycleEditForm({
   cycleId,
@@ -35,7 +40,7 @@ export function CycleEditForm({
   initialDescription,
   initialPeriodDays,
   initialBlocks,
-  subjectNames,
+  subjects,
   onDone,
 }: {
   cycleId: string;
@@ -43,7 +48,7 @@ export function CycleEditForm({
   initialDescription: string | null;
   initialPeriodDays: number;
   initialBlocks: EditBlock[];
-  subjectNames: string[];
+  subjects: EditorSubject[];
   onDone: () => void;
 }) {
   const [name, setName] = useState(initialName);
@@ -53,6 +58,9 @@ export function CycleEditForm({
   const [isPending, startTransition] = useTransition();
 
   const total = blocks.reduce((acc, b) => acc + b.minutes, 0);
+
+  const topicsFor = (subjectName: string) =>
+    subjects.find((s) => s.name === subjectName)?.topics ?? [];
 
   const updateBlock = (index: number, patch: Partial<EditBlock>) => {
     setBlocks((prev) =>
@@ -82,6 +90,8 @@ export function CycleEditForm({
         blocks: blocks.map((b, i) => ({
           subject_id: b.subject_id,
           subject_name: b.subject_name.trim(),
+          topic_id: b.topic_id,
+          topic_name: b.topic_name,
           activity: b.activity,
           minutes: b.minutes,
           // Ajusta blocos de dias que deixaram de existir.
@@ -164,23 +174,31 @@ export function CycleEditForm({
               className="bg-muted/40 flex flex-col gap-1.5 rounded-lg border p-2"
             >
               <div className="flex items-center gap-1.5">
-                {subjectNames.length > 0 ? (
+                {subjects.length > 0 ? (
                   <Select
                     value={block.subject_name}
                     items={Object.fromEntries(
-                      subjectNames.map((n) => [n, n]),
+                      subjects.map((s) => [s.name, s.name]),
                     )}
-                    onValueChange={(v) =>
-                      v && updateBlock(index, { subject_name: v })
-                    }
+                    onValueChange={(v) => {
+                      if (!v) return;
+                      const subject = subjects.find((s) => s.name === v);
+                      updateBlock(index, {
+                        subject_name: v,
+                        subject_id: subject?.id ?? null,
+                        // Troca de matéria limpa o tópico escolhido.
+                        topic_id: null,
+                        topic_name: null,
+                      });
+                    }}
                   >
                     <SelectTrigger size="sm" className="w-full">
                       <SelectValue placeholder="Matéria" />
                     </SelectTrigger>
                     <SelectContent>
-                      {subjectNames.map((n) => (
-                        <SelectItem key={n} value={n}>
-                          {n}
+                      {subjects.map((s) => (
+                        <SelectItem key={s.name} value={s.name}>
+                          {s.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -193,6 +211,8 @@ export function CycleEditForm({
                       updateBlock(index, {
                         subject_name: e.target.value,
                         subject_id: null,
+                        topic_id: null,
+                        topic_name: null,
                       })
                     }
                   />
@@ -206,6 +226,43 @@ export function CycleEditForm({
                   <Trash2 className="size-3.5" />
                 </Button>
               </div>
+
+              {topicsFor(block.subject_name).length > 0 ? (
+                <Select
+                  value={block.topic_id ?? NO_TOPIC}
+                  items={Object.fromEntries([
+                    [NO_TOPIC, "Sem tópico"],
+                    ...topicsFor(block.subject_name).map((t) => [t.id, t.name]),
+                  ])}
+                  onValueChange={(v) => {
+                    if (!v) return;
+                    if (v === NO_TOPIC) {
+                      updateBlock(index, { topic_id: null, topic_name: null });
+                      return;
+                    }
+                    const topic = topicsFor(block.subject_name).find(
+                      (t) => t.id === v,
+                    );
+                    if (!topic) return;
+                    updateBlock(index, {
+                      topic_id: topic.id,
+                      topic_name: topic.name,
+                    });
+                  }}
+                >
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue placeholder="Tópico" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_TOPIC}>Sem tópico</SelectItem>
+                    {topicsFor(block.subject_name).map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : null}
 
               <div className="flex items-center gap-1.5">
                 <Select
@@ -293,8 +350,10 @@ export function CycleEditForm({
             setBlocks((prev) => [
               ...prev,
               {
-                subject_id: null,
-                subject_name: subjectNames[0] ?? "",
+                subject_id: subjects[0]?.id ?? null,
+                subject_name: subjects[0]?.name ?? "",
+                topic_id: null,
+                topic_name: null,
                 activity: "THEORY",
                 minutes: 60,
                 day_of_cycle: 0,

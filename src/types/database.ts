@@ -217,6 +217,8 @@ export interface Database {
           cycle_id: string;
           subject_id: string | null;
           subject_name: string;
+          topic_id: string | null;
+          topic_name: string | null;
           activity: ActivityType;
           minutes: number;
           day_of_cycle: number;
@@ -227,6 +229,8 @@ export interface Database {
           cycle_id: string;
           subject_id?: string | null;
           subject_name: string;
+          topic_id?: string | null;
+          topic_name?: string | null;
           activity?: ActivityType;
           minutes?: number;
           day_of_cycle?: number;
@@ -237,6 +241,8 @@ export interface Database {
           cycle_id?: string;
           subject_id?: string | null;
           subject_name?: string;
+          topic_id?: string | null;
+          topic_name?: string | null;
           activity?: ActivityType;
           minutes?: number;
           day_of_cycle?: number;

@@ -21,7 +21,11 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { CycleEditForm } from "@/components/features/cycles/cycle-edit-form";
+import {
+  CycleEditForm,
+  type EditBlock,
+} from "@/components/features/cycles/cycle-edit-form";
+import type { EditorSubject } from "@/components/features/cycles/cycle-editor";
 import { ACTIVITY_LABELS, formatMinutes } from "@/lib/format";
 import type { ActivityType } from "@/types/database";
 
@@ -29,6 +33,8 @@ export type CycleBlockView = {
   id: string;
   subject_id: string | null;
   subject_name: string;
+  topic_id: string | null;
+  topic_name: string | null;
   activity: ActivityType;
   minutes: number;
   day_of_cycle: number;
@@ -49,10 +55,10 @@ const DAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 export function CycleCard({
   cycle,
-  subjectNames = [],
+  subjects = [],
 }: {
   cycle: CycleView;
-  subjectNames?: string[];
+  subjects?: EditorSubject[];
 }) {
   const [isPublic, setIsPublic] = useState(cycle.is_public);
   const [editing, setEditing] = useState(false);
@@ -181,14 +187,18 @@ export function CycleCard({
             initialName={cycle.name}
             initialDescription={cycle.description}
             initialPeriodDays={cycle.period_days}
-            initialBlocks={cycle.blocks.map((b) => ({
-              subject_id: b.subject_id,
-              subject_name: b.subject_name,
-              activity: b.activity,
-              minutes: b.minutes,
-              day_of_cycle: b.day_of_cycle,
-            }))}
-            subjectNames={subjectNames}
+            initialBlocks={cycle.blocks.map(
+              (b): EditBlock => ({
+                subject_id: b.subject_id,
+                subject_name: b.subject_name,
+                topic_id: b.topic_id,
+                topic_name: b.topic_name,
+                activity: b.activity,
+                minutes: b.minutes,
+                day_of_cycle: b.day_of_cycle,
+              }),
+            )}
+            subjects={subjects}
             onDone={() => setEditing(false)}
           />
         ) : null}
@@ -214,9 +224,16 @@ export function CycleCard({
                   {dayBlocks.map((b) => (
                     <div
                       key={b.id}
-                      className="text-muted-foreground flex items-center justify-between gap-1 text-xs"
+                      className="text-muted-foreground flex items-start justify-between gap-1 text-xs"
                     >
-                      <span className="truncate">{b.subject_name}</span>
+                      <div className="min-w-0">
+                        <span className="block truncate">{b.subject_name}</span>
+                        {b.topic_name ? (
+                          <span className="text-muted-foreground/70 block truncate text-[11px]">
+                            {b.topic_name}
+                          </span>
+                        ) : null}
+                      </div>
                       <span className="shrink-0 tabular-nums">
                         {b.minutes}min de{" "}
                         <span className="text-muted-foreground/60">
