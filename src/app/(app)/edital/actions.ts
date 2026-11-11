@@ -321,3 +321,92 @@ export async function approveEdital(id: string): Promise<EditalActionState> {
   revalidatePath("/cycles");
   return { success: "Edital ativado!" };
 }
+
+/**
+ * Move um nó para outro pai do mesmo nível (tópico entre disciplinas,
+ * subtópico entre tópicos). O RPC valida posse, profundidade e ciclos.
+ */
+export async function moveSubject(input: {
+  id: string;
+  parent_id: string | null;
+}): Promise<EditalActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Sessão expirada. Entre novamente." };
+
+  const { error } = await supabase.rpc("move_edital_subject", {
+    _id: input.id,
+    _parent: input.parent_id,
+  });
+
+  if (error) return { error: "Não foi possível mover o tópico." };
+
+  revalidatePath("/edital");
+  revalidatePath("/cycles");
+  return { success: "Tópico movido." };
+}
+
+/** Reordena um nó entre os irmãos (uma posição por vez). */
+export async function reorderSubject(input: {
+  id: string;
+  direction: "up" | "down";
+}): Promise<EditalActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "Sessão expirada. Entre novamente." };
+
+  const { data: node } = await supabase
+    .from("edital_subjects")
+    .select("id, edital_id, parent_id, sort_order")
+    .eq("id", input.id)
+    .maybeSingle();
+
+  if (!node) return { error: "Tópico não encontrado." };
+
+  const base = supabase
+    .from("edital_subjects")
+    .select("id, sort_order")
+    .eq("edital_id", node.edital_id)
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+
+  const { data: siblings } = node.parent_id
+    ? await base.eq("parent_id", node.parent_id)
+    : await base.is("parent_id", null);
+
+  const list = siblings ?? [];
+  const index = list.findIndex((s) => s.id === input.id);
+  if (index === -1) return { error: "Tópico não encontrado." };
+
+  const target = input.direction === "up" ? index - 1 : index + 1;
+  if (target < 0 || target >= list.length) {
+    return { success: "Já está no limite." };
+  }
+
+  // Reatribui a ordem sequencialmente após a troca — evita empates.
+  const ordered = [...list];
+  [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
+
+  const updates = await Promise.all(
+    ordered.map((sibling, position) =>
+      supabase
+        .from("edital_subjects")
+        .update({ sort_order: position })
+        .eq("id", sibling.id),
+    ),
+  );
+
+  if (updates.some((result) => result.error)) {
+    return { error: "Não foi possível reordenar." };
+  }
+
+  revalidatePath("/edital");
+  revalidatePath("/cycles");
+  return { success: "Ordem atualizada." };
+}

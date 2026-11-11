@@ -13,6 +13,8 @@ export type CycleActionState =
 const blockSchema = z.object({
   subject_id: z.string().uuid().nullable().optional(),
   subject_name: z.string().trim().min(1, "Informe a matéria do bloco."),
+  topic_id: z.string().uuid().nullable().optional(),
+  topic_name: z.string().trim().nullable().optional(),
   activity: z
     .enum(["THEORY", "QUESTIONS", "REVIEW", "SIMULATED"])
     .default("THEORY"),
@@ -35,6 +37,42 @@ export type CycleInput = z.input<typeof cycleSchema>;
 function revalidateCycleViews() {
   revalidatePath("/cycles");
   revalidatePath("/dashboard");
+}
+
+/**
+ * Mantém apenas `topic_id` de tópicos dos editais do próprio usuário.
+ *
+ * O RLS protege a leitura, mas o insert em `cycle_blocks` não valida o
+ * vínculo com o edital — sem isso, daria para referenciar o tópico de um
+ * edital público de outra pessoa. O nome continua como snapshot.
+ */
+async function filterOwnTopicIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  blocks: { topic_id?: string | null }[],
+): Promise<Set<string>> {
+  const ids = [
+    ...new Set(
+      blocks.map((b) => b.topic_id).filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  if (ids.length === 0) return new Set();
+
+  const { data: editals } = await supabase
+    .from("editals")
+    .select("id")
+    .eq("user_id", userId);
+
+  const editalIds = (editals ?? []).map((e) => e.id);
+  if (editalIds.length === 0) return new Set();
+
+  const { data: topics } = await supabase
+    .from("edital_subjects")
+    .select("id")
+    .in("edital_id", editalIds)
+    .in("id", ids);
+
+  return new Set((topics ?? []).map((t) => t.id));
 }
 
 export async function createCycle(
@@ -68,11 +106,20 @@ export async function createCycle(
     return { error: "Não foi possível criar o ciclo." };
   }
 
+  const ownedTopics = await filterOwnTopicIds(
+    supabase,
+    user.id,
+    parsed.data.blocks,
+  );
+
   const { error: blocksError } = await supabase.from("cycle_blocks").insert(
     parsed.data.blocks.map((b, i) => ({
       cycle_id: cycle.id,
       subject_id: b.subject_id ?? null,
       subject_name: b.subject_name,
+      topic_id:
+        b.topic_id && ownedTopics.has(b.topic_id) ? b.topic_id : null,
+      topic_name: b.topic_name || null,
       activity: b.activity as ActivityType,
       minutes: b.minutes,
       day_of_cycle: b.day_of_cycle,
@@ -162,7 +209,7 @@ export async function duplicateCycle(
 
   const { data: blocks } = await supabase
     .from("cycle_blocks")
-    .select("subject_id, subject_name, activity, minutes, day_of_cycle, sort_order")
+    .select("subject_id, subject_name, topic_name, activity, minutes, day_of_cycle, sort_order")
     .eq("cycle_id", source.id);
 
   const { data: created, error } = await supabase
@@ -186,9 +233,12 @@ export async function duplicateCycle(
     await supabase.from("cycle_blocks").insert(
       blocks.map((b) => ({
         cycle_id: created.id,
-        // Não referencia o subject_id de outro edital para evitar vínculo inválido.
+        // Não referencia o subject_id/topic_id de outro edital para evitar
+        // vínculo inválido. O nome do tópico é preservado como snapshot.
         subject_id: null,
         subject_name: b.subject_name,
+        topic_id: null,
+        topic_name: b.topic_name ?? null,
         activity: b.activity as ActivityType,
         minutes: b.minutes,
         day_of_cycle: b.day_of_cycle,
@@ -288,11 +338,20 @@ export async function updateCycle(
 
   if (delError) return { error: "Não foi possível atualizar os blocos." };
 
+  const ownedTopics = await filterOwnTopicIds(
+    supabase,
+    user.id,
+    parsed.data.blocks,
+  );
+
   const { error: insError } = await supabase.from("cycle_blocks").insert(
     parsed.data.blocks.map((b, i) => ({
       cycle_id: id,
       subject_id: b.subject_id ?? null,
       subject_name: b.subject_name,
+      topic_id:
+        b.topic_id && ownedTopics.has(b.topic_id) ? b.topic_id : null,
+      topic_name: b.topic_name || null,
       activity: b.activity as ActivityType,
       minutes: b.minutes,
       day_of_cycle: b.day_of_cycle,

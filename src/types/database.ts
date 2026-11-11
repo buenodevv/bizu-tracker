@@ -217,6 +217,8 @@ export interface Database {
           cycle_id: string;
           subject_id: string | null;
           subject_name: string;
+          topic_id: string | null;
+          topic_name: string | null;
           activity: ActivityType;
           minutes: number;
           day_of_cycle: number;
@@ -227,6 +229,8 @@ export interface Database {
           cycle_id: string;
           subject_id?: string | null;
           subject_name: string;
+          topic_id?: string | null;
+          topic_name?: string | null;
           activity?: ActivityType;
           minutes?: number;
           day_of_cycle?: number;
@@ -237,6 +241,8 @@ export interface Database {
           cycle_id?: string;
           subject_id?: string | null;
           subject_name?: string;
+          topic_id?: string | null;
+          topic_name?: string | null;
           activity?: ActivityType;
           minutes?: number;
           day_of_cycle?: number;
@@ -423,6 +429,22 @@ export interface Database {
       consume_extraction_quota: {
         Args: Record<string, never>;
         Returns: { allowed: boolean; remaining: number }[];
+      };
+      consume_ai_quota: {
+        Args: { _kind: string };
+        Returns: {
+          allowed: boolean;
+          remaining: number;
+          monthly_limit: number;
+        }[];
+      };
+      merge_edital_subject: {
+        Args: { _keep: string; _merge: string };
+        Returns: undefined;
+      };
+      move_edital_subject: {
+        Args: { _id: string; _parent: string | null };
+        Returns: undefined;
       };
       sync_topic_progress: {
         Args: { _topic_id: string };

@@ -27,13 +27,27 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { generateCycleBlocks, minutesByDay } from "@/lib/cycle-generator";
 import { ACTIVITY_LABELS, formatMinutes } from "@/lib/format";
-import type { ActivityType, Importance } from "@/types/database";
+import type {
+  ActivityType,
+  Importance,
+  ProgressStatus,
+} from "@/types/database";
+
+export type EditorTopic = {
+  id: string;
+  name: string;
+  status: ProgressStatus;
+  /** Data ISO da última sessão; null quando nunca estudado. */
+  lastStudiedAt: string | null;
+};
 
 export type EditorSubject = {
   id: string | null;
   name: string;
   weight: number | null;
   importance: Importance;
+  /** Tópicos do edital (2º nível). */
+  topics: EditorTopic[];
 };
 
 export type EditorArea = { id: string; name: string };
@@ -42,12 +56,16 @@ type DraftBlock = {
   key: string;
   subject_id: string | null;
   subject_name: string;
+  topic_id: string | null;
+  topic_name: string | null;
   activity: ActivityType;
   minutes: number;
   day_of_cycle: number;
 };
 
 const DAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+/** Sentinela do Select para "sem tópico" (Select não aceita valor vazio). */
+const NO_TOPIC = "__none__";
 
 export function CycleEditor({
   areas,
@@ -75,6 +93,9 @@ export function CycleEditor({
   );
   const maxDay = Math.max(...perDay, 1);
 
+  const topicsFor = (subjectName: string) =>
+    subjects.find((s) => s.name === subjectName)?.topics ?? [];
+
   const canSave =
     name.trim().length >= 2 && areaId && blocks.length > 0 && !isPending;
 
@@ -100,7 +121,9 @@ export function CycleEditor({
         key: nextKey(`gen-${i}`),
         subject_id: b.subject_id,
         subject_name: b.subject_name,
-        activity: "THEORY" as ActivityType,
+        topic_id: b.topic_id,
+        topic_name: b.topic_name,
+        activity: b.activity,
         minutes: b.minutes,
         day_of_cycle: b.day_of_cycle,
       })),
@@ -111,7 +134,7 @@ export function CycleEditor({
     }
 
     toast.success(
-      `${generated.length} blocos gerados com base no edital e na meta.`,
+      `${generated.length} blocos gerados com base no edital, nos tópicos e na meta.`,
     );
   };
 
@@ -123,6 +146,8 @@ export function CycleEditor({
         key: nextKey("manual"),
         subject_id: fallback?.id ?? null,
         subject_name: fallback?.name ?? "",
+        topic_id: null,
+        topic_name: null,
         activity: "THEORY",
         minutes: 60,
         day_of_cycle: day,
@@ -151,6 +176,8 @@ export function CycleEditor({
           .map((b, i) => ({
             subject_id: b.subject_id,
             subject_name: b.subject_name.trim(),
+            topic_id: b.topic_id,
+            topic_name: b.topic_name,
             activity: b.activity,
             minutes: b.minutes,
             day_of_cycle: Math.min(b.day_of_cycle, periodDays - 1),
@@ -364,6 +391,9 @@ export function CycleEditor({
                                 subject_name: v,
                                 subject_id:
                                   subjects.find((s) => s.name === v)?.id ?? null,
+                                // Troca de matéria limpa o tópico escolhido.
+                                topic_id: null,
+                                topic_name: null,
                               })
                             }
                           >
@@ -399,6 +429,49 @@ export function CycleEditor({
                           <Trash2 className="size-3.5" />
                         </Button>
                       </div>
+
+                      {topicsFor(block.subject_name).length > 0 ? (
+                        <Select
+                          value={block.topic_id ?? NO_TOPIC}
+                          items={Object.fromEntries([
+                            [NO_TOPIC, "Sem tópico"],
+                            ...topicsFor(block.subject_name).map((t) => [
+                              t.id,
+                              t.name,
+                            ]),
+                          ])}
+                          onValueChange={(v) => {
+                            if (!v) return;
+                            if (v === NO_TOPIC) {
+                              updateBlock(block.key, {
+                                topic_id: null,
+                                topic_name: null,
+                              });
+                              return;
+                            }
+                            const topic = topicsFor(block.subject_name).find(
+                              (t) => t.id === v,
+                            );
+                            if (!topic) return;
+                            updateBlock(block.key, {
+                              topic_id: topic.id,
+                              topic_name: topic.name,
+                            });
+                          }}
+                        >
+                          <SelectTrigger size="sm" className="w-full">
+                            <SelectValue placeholder="Tópico" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NO_TOPIC}>Sem tópico</SelectItem>
+                            {topicsFor(block.subject_name).map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : null}
 
                       <div className="flex items-center gap-2">
                         <Select

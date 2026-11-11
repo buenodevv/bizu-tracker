@@ -1,27 +1,52 @@
-import type { Importance } from "@/types/database";
+import type {
+  ActivityType,
+  Importance,
+  ProgressStatus,
+} from "@/types/database";
+
+export type GeneratorTopic = {
+  id: string | null;
+  name: string;
+  status: ProgressStatus;
+  /** Data ISO da última sessão neste tópico; null quando nunca estudado. */
+  lastStudiedAt: string | null;
+};
+
+export type GeneratorSubject = {
+  id: string | null;
+  name: string;
+  weight: number | null;
+  importance: Importance;
+  /** Tópicos do edital (2º nível). Vazio = a matéria é a própria unidade. */
+  topics?: GeneratorTopic[];
+};
 
 export type GenerationInput = {
-  subjects: {
-    id: string | null;
-    name: string;
-    weight: number | null;
-    importance: Importance;
-  }[];
+  subjects: GeneratorSubject[];
   weeklyGoalMin: number;
   daysPerWeek: number;
   /** Tamanho máximo desejado de um bloco (min). Default 90. */
   maxBlockMin?: number;
   /** Tamanho mínimo de um bloco (min). Default 20. */
   minBlockMin?: number;
+  /** Data de referência para detectar tópicos "esquecidos". */
+  today?: Date | string;
 };
 
 export type GeneratedBlock = {
   subject_id: string | null;
   subject_name: string;
+  topic_id: string | null;
+  topic_name: string | null;
+  activity: ActivityType;
   minutes: number;
   day_of_cycle: number;
   sort_order: number;
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Tópico sem estudo há mais de 14 dias ganha prioridade. */
+const STALE_DAYS = 14;
 
 /**
  * Peso efetivo de uma disciplina.
@@ -43,14 +68,112 @@ export function effectiveWeight(input: {
   }
 }
 
+function toTimestamp(value: Date | string | null): number | null {
+  if (!value) return null;
+  const ms = value instanceof Date ? value.getTime() : Date.parse(value);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+/**
+ * Prioridade do tópico — menor valor estuda antes:
+ * - 0 nunca estudado
+ * - 1 "esquecido" (sem estudo há mais de 14 dias)
+ * - 2 em andamento
+ * - 3 revisado/outros
+ * - 4 concluído (só entra na fila quando toda a matéria terminou)
+ */
+function topicPriority(topic: GeneratorTopic, todayMs: number): number {
+  if (topic.status === "DONE") return 4;
+
+  const lastMs = toTimestamp(topic.lastStudiedAt);
+  if (lastMs === null) return 0;
+  if ((todayMs - lastMs) / DAY_MS >= STALE_DAYS) return 1;
+  if (topic.status === "IN_PROGRESS") return 2;
+  return 3;
+}
+
+type TopicUnit = {
+  topic_id: string | null;
+  topic_name: string | null;
+  activity: ActivityType;
+  priority: number;
+  lastMs: number | null;
+  index: number;
+};
+
+/**
+ * Unidades de estudo de uma matéria, em ordem de prioridade.
+ *
+ * Matéria sem tópicos vira uma unidade única (a própria matéria). Se todos os
+ * tópicos estiverem concluídos, a matéria entra em modo revisão — os tópicos
+ * estudados há mais tempo vêm primeiro (revisão espaçada simples).
+ */
+function buildTopicUnits(
+  subject: GeneratorSubject,
+  todayMs: number,
+): TopicUnit[] {
+  const topics = (subject.topics ?? []).filter(
+    (t) => t.name.trim().length > 0,
+  );
+
+  if (topics.length === 0) {
+    return [
+      {
+        topic_id: null,
+        topic_name: null,
+        activity: "THEORY",
+        priority: 0,
+        lastMs: null,
+        index: 0,
+      },
+    ];
+  }
+
+  const allDone = topics.every((t) => t.status === "DONE");
+  const eligible = allDone
+    ? topics
+    : topics.filter((t) => t.status !== "DONE");
+
+  return eligible
+    .map<TopicUnit>((topic, index) => ({
+      topic_id: topic.id,
+      topic_name: topic.name.trim(),
+      activity: allDone ? "REVIEW" : "THEORY",
+      priority: topicPriority(topic, todayMs),
+      lastMs: toTimestamp(topic.lastStudiedAt),
+      index,
+    }))
+    .sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      // Há mais tempo sem estudo vem antes; nunca estudado (null) primeiro.
+      const aLast = a.lastMs ?? -Infinity;
+      const bLast = b.lastMs ?? -Infinity;
+      if (aLast !== bLast) return aLast - bLast;
+      return a.index - b.index;
+    });
+}
+
+type QueueItem = {
+  subject_id: string | null;
+  subject_name: string;
+  weight: number;
+  topic_id: string | null;
+  topic_name: string | null;
+  activity: ActivityType;
+  minutes: number;
+};
+
 /**
  * Gera os blocos de um ciclo.
  *
  * Estratégia:
  * 1. Divide a meta semanal entre as matérias proporcionalmente ao peso.
- * 2. Quebra o tempo de cada matéria em blocos de no máximo `maxBlockMin`.
- * 3. Distribui os blocos nos dias com round-robin (a matéria de maior peso
- *    sai na frente na fila), equilibrando a carga diária.
+ * 2. Dentro de cada matéria, ordena os tópicos por prioridade (nunca
+ *    estudado > esquecido > em andamento > revisado > concluído).
+ * 3. Quebra o tempo de cada matéria em blocos de no máximo `maxBlockMin`,
+ *    alternando entre os tópicos prioritários.
+ * 4. Distribui os blocos nos dias com round-robin ponderado, evitando o mesmo
+ *    tópico duas vezes no mesmo dia e variando as matérias de cada dia.
  */
 export function generateCycleBlocks(input: GenerationInput): GeneratedBlock[] {
   const {
@@ -59,12 +182,14 @@ export function generateCycleBlocks(input: GenerationInput): GeneratedBlock[] {
     daysPerWeek,
     maxBlockMin = 90,
     minBlockMin = 20,
+    today,
   } = input;
 
   if (subjects.length === 0) return [];
   if (weeklyGoalMin < minBlockMin) return [];
 
   const days = Math.min(7, Math.max(1, Math.floor(daysPerWeek)));
+  const todayMs = toTimestamp(today ?? new Date()) ?? Date.now();
 
   // 1. Pesos e minutos por matéria
   const weighted = subjects.map((s) => ({
@@ -83,56 +208,108 @@ export function generateCycleBlocks(input: GenerationInput): GeneratedBlock[] {
   // 2. Ajusta o total para bater com a meta
   reconcileTotal(allocated, weeklyGoalMin, minBlockMin);
 
-  // 3. Quebra cada matéria em blocos menores
-  const queue: { subject: (typeof allocated)[number]; minutes: number }[] = [];
+  // 3. Quebra cada matéria em blocos menores, alternando os tópicos
+  const queue: QueueItem[] = [];
 
-  // Embaralhamento determinístico: ordena por peso, menor bloco primeiro,
-  // para que a distribuição fique equilibrada ao longo dos dias.
+  // Matérias de maior peso primeiro — a distribuição por carga equilibra os dias.
   const ordered = [...allocated].sort((a, b) => b.weight - a.weight);
 
   for (const subject of ordered) {
+    const units = buildTopicUnits(subject, todayMs);
     let remaining = subject.minutes;
-    // Quantidade de blocos: o suficiente para nenhum passar de maxBlockMin
+
     const chunks = Math.max(1, Math.ceil(remaining / maxBlockMin));
-    const perChunk = Math.round(remaining / chunks / 5) * 5;
+    const perChunk = Math.min(
+      maxBlockMin,
+      Math.max(minBlockMin, Math.round(remaining / chunks / 5) * 5),
+    );
 
     for (let i = 0; i < chunks; i += 1) {
       const isLast = i === chunks - 1;
-      const minutes = isLast ? remaining : Math.max(minBlockMin, perChunk);
-      const use = Math.min(minutes, remaining);
-      if (use <= 0) break;
+      const minutes = isLast ? remaining : Math.min(perChunk, remaining);
+      if (minutes <= 0) break;
 
-      queue.push({ subject, minutes: use });
-      remaining -= use;
+      const unit = units[i % units.length];
+
+      queue.push({
+        subject_id: subject.id,
+        subject_name: subject.name,
+        weight: subject.weight,
+        topic_id: unit.topic_id,
+        topic_name: unit.topic_name,
+        activity: unit.activity,
+        minutes,
+      });
+      remaining -= minutes;
     }
   }
 
-  // 4. Round-robin nos dias, equilibrando a carga diária
+  // 4. Distribui nos dias, equilibrando a carga
   const perDay: GeneratedBlock[][] = Array.from({ length: days }, () => []);
   const dayLoad = Array.from({ length: days }, () => 0);
 
   let order = 0;
   for (const item of queue) {
-    // Escolhe o dia com menor carga (estável: menor índice em empate)
     let bestDay = 0;
-    for (let d = 1; d < days; d += 1) {
-      if (dayLoad[d] < dayLoad[bestDay]) bestDay = d;
+    let bestScore: DayScore | null = null;
+
+    for (let d = 0; d < days; d += 1) {
+      const blocks = perDay[d];
+      const sameTopic =
+        item.topic_id !== null &&
+        blocks.some((b) => b.topic_id === item.topic_id);
+      // Quantos blocos da mesma matéria o dia já tem — espalha a variedade.
+      const sameSubject = blocks.filter(
+        (b) =>
+          item.subject_id !== null
+            ? b.subject_id === item.subject_id
+            : b.subject_name === item.subject_name,
+      ).length;
+
+      // Ordem de preferência: sem tópico repetido, menor carga, mais variedade.
+      const score: DayScore = [
+        sameTopic ? 1 : 0,
+        dayLoad[d],
+        sameSubject,
+        d,
+      ];
+
+      if (!bestScore || isLowerScore(score, bestScore)) {
+        bestScore = score;
+        bestDay = d;
+      }
     }
 
     perDay[bestDay].push({
-      subject_id: item.subject.id,
-      subject_name: item.subject.name,
+      subject_id: item.subject_id,
+      subject_name: item.subject_name,
+      topic_id: item.topic_id,
+      topic_name: item.topic_name,
+      activity: item.activity,
       minutes: item.minutes,
       day_of_cycle: bestDay,
-      sort_order: order++,
+      sort_order: 0,
     });
     dayLoad[bestDay] += item.minutes;
   }
 
-  return perDay.flat().sort((a, b) => {
-    if (a.day_of_cycle !== b.day_of_cycle) return a.day_of_cycle - b.day_of_cycle;
-    return a.sort_order - b.sort_order;
-  });
+  const blocks: GeneratedBlock[] = [];
+  for (let d = 0; d < days; d += 1) {
+    for (const block of perDay[d]) {
+      blocks.push({ ...block, sort_order: order++ });
+    }
+  }
+
+  return blocks;
+}
+
+type DayScore = readonly [number, number, number, number];
+
+function isLowerScore(a: DayScore, b: DayScore): boolean {
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return a[i] < b[i];
+  }
+  return false;
 }
 
 /**
