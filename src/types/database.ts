@@ -430,6 +430,22 @@ export interface Database {
         Args: Record<string, never>;
         Returns: { allowed: boolean; remaining: number }[];
       };
+      consume_ai_quota: {
+        Args: { _kind: string };
+        Returns: {
+          allowed: boolean;
+          remaining: number;
+          monthly_limit: number;
+        }[];
+      };
+      merge_edital_subject: {
+        Args: { _keep: string; _merge: string };
+        Returns: undefined;
+      };
+      move_edital_subject: {
+        Args: { _id: string; _parent: string | null };
+        Returns: undefined;
+      };
       sync_topic_progress: {
         Args: { _topic_id: string };
         Returns: undefined;

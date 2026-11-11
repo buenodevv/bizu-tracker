@@ -12,6 +12,8 @@ import {
 } from "@/components/features/edital/edital-tree";
 import { StudyAreaForm } from "@/components/features/edital/study-area-form";
 import { EditalUpload } from "@/components/features/edital/edital-upload";
+import { EditalRefine } from "@/components/features/edital/edital-refine";
+import { EditalComplete } from "@/components/features/edital/edital-complete";
 import { getLlmProvider } from "@/lib/ai/extract-edital";
 import { EditalActions } from "@/components/features/edital/edital-actions";
 import { Badge } from "@/components/ui/badge";
@@ -176,7 +178,17 @@ async function EditalContent() {
                                 : "rascunho"}
                             </Badge>
                           </div>
-                          <EditalSummary subjects={subjects} />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <EditalSummary subjects={subjects} />
+                            <EditalRefine
+                              editalId={edital.id}
+                              aiConfigured={aiConfigured}
+                            />
+                            <EditalComplete
+                              editalId={edital.id}
+                              aiConfigured={aiConfigured}
+                            />
+                          </div>
                         </div>
 
                         <EditalUpload

@@ -43,6 +43,15 @@ export type ExtractedSubject = z.infer<typeof extractedSubjectSchema>;
 export interface LlmProvider {
   readonly name: string;
   extractEdital(text: string): Promise<ExtractedEdital>;
+  /**
+   * Geração de JSON estruturado a partir de um prompt + schema declarativo.
+   * Usado por features que validam a resposta por conta própria (ex.:
+   * refinamento da árvore do edital).
+   */
+  generateJson(
+    prompt: string,
+    jsonSchema: Record<string, unknown>,
+  ): Promise<unknown>;
 }
 
 /** Erro de configuração/credencial — permite fallback gracioso na UI. */
@@ -184,6 +193,17 @@ export class GeminiProvider implements LlmProvider {
   }
 
   async extractEdital(text: string): Promise<ExtractedEdital> {
+    const raw = await this.generateJson(
+      buildExtractionPrompt(normalizeEditalText(text)),
+      GEMINI_SCHEMA as unknown as Record<string, unknown>,
+    );
+    return parseExtractedEditalObject(raw);
+  }
+
+  async generateJson(
+    prompt: string,
+    jsonSchema: Record<string, unknown>,
+  ): Promise<unknown> {
     const { GoogleGenAI } = await import("@google/genai");
     // O SDK usa `v1` por padrão, mas os modelos `*-latest` só existem em
     // `v1beta`. Sem isso, a API responde 404 "model is not found".
@@ -194,12 +214,12 @@ export class GeminiProvider implements LlmProvider {
 
     const response = await ai.models.generateContent({
       model: this.model,
-      contents: buildExtractionPrompt(normalizeEditalText(text)),
+      contents: prompt,
       config: {
         // Força JSON e restringe a forma da resposta.
         responseMimeType: "application/json",
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        responseSchema: GEMINI_SCHEMA as any,
+        responseSchema: jsonSchema as any,
         temperature: 0.1,
         maxOutputTokens: 8192,
       },
@@ -210,7 +230,7 @@ export class GeminiProvider implements LlmProvider {
       throw new Error("A IA não retornou conteúdo.");
     }
 
-    return parseExtractedEdital(raw);
+    return parseJsonResponse(raw);
   }
 }
 
@@ -218,20 +238,25 @@ export class GeminiProvider implements LlmProvider {
 // Parse seguro (a resposta do modelo não é confiável)
 // ---------------------------------------------------------------------------
 
-export function parseExtractedEdital(raw: string): ExtractedEdital {
-  // Remove cercas de código, caso o modelo as adicione.
+/** Remove cercas de código e parseia o JSON devolvido pela IA. */
+export function parseJsonResponse(raw: string): unknown {
   const cleaned = raw
     .trim()
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```$/, "");
 
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(cleaned);
+    return JSON.parse(cleaned);
   } catch {
     throw new Error("A IA retornou um JSON inválido.");
   }
+}
 
+export function parseExtractedEdital(raw: string): ExtractedEdital {
+  return parseExtractedEditalObject(parseJsonResponse(raw));
+}
+
+export function parseExtractedEditalObject(parsed: unknown): ExtractedEdital {
   const result = extractedEditalSchema.safeParse(parsed);
   if (!result.success) {
     throw new Error("A resposta da IA não segue o formato esperado.");
@@ -373,5 +398,43 @@ export class OpenAiProvider implements LlmProvider {
     if (!content) throw new Error("A IA não retornou conteúdo.");
 
     return parseExtractedEdital(content);
+  }
+
+  async generateJson(
+    prompt: string,
+    jsonSchema: Record<string, unknown>,
+  ): Promise<unknown> {
+    const res = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: this.model,
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: `Responda somente com JSON válido que siga este schema: ${JSON.stringify(jsonSchema)}`,
+          },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Falha na IA (${res.status}).`);
+    }
+
+    const json = (await res.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+
+    const content = json.choices?.[0]?.message?.content;
+    if (!content) throw new Error("A IA não retornou conteúdo.");
+
+    return parseJsonResponse(content);
   }
 }

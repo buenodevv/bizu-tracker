@@ -4,7 +4,7 @@
 > organização da matéria com subtópicos (manual e com IA) e preparação para
 > restrição por assinatura.
 >
-> Status: **Fase 1 implementada** (migração `0011_cycle_block_topic.sql` pendente de aplicação) · Data: 2026-11-10 · Complementa [PLANO.md](./PLANO.md)
+> Status: **Fases 1 e 2 implementadas** (migrações `0011` e `0012` pendentes de aplicação) · Data: 2026-11-10 · Complementa [PLANO.md](./PLANO.md)
 
 ---
 
@@ -117,10 +117,18 @@ cobrança entre sem refatorar:
 
 | Fase | Escopo | Depende de |
 |---|---|---|
-| **1** | Migração `topic_id` + gerador v2 determinístico + tópico visível no card do ciclo/editor | — |
-| **2** | Melhorias manuais da árvore + Refinar/Completar com IA (com diff) + cota genérica | 1 |
+| **1** ✅ | Migração `topic_id` + gerador v2 determinístico + tópico visível no card do ciclo/editor | — |
+| **2** ✅ | Melhorias manuais da árvore + Refinar/Completar com IA (com diff) + cota genérica | 1 |
 | **3** | `planCycle` com IA + UI "Gerar com IA" (já nasce atrás do entitlement) | 2 |
 | **4** | Assinatura de verdade (Stripe + PIX, portal, webhook) — épico separado | 3 |
+
+### Notas da Fase 2
+
+- **Organização manual:** busca na árvore, reordenar (cima/baixo) e mover para outro pai do mesmo nível. O arrasto previsto inicialmente foi trocado por menu + diálogo de destino: funciona em touch, mantém o alvo explícito e não conflita com o clique para renomear. A validação de nível/ciclo fica no RPC `move_edital_subject`.
+- **Refinar com IA:** propõe mesclagens (só entre irmãos), renomeações e movimentos. Toda resposta é validada contra a árvore atual antes de aparecer; a aplicação revalida no servidor. Mesclagens preservam sessões, questões e blocos de ciclo (RPC `merge_edital_subject`).
+- **Completar com IA:** sugere tópicos ausentes por disciplina com base na banca; só adiciona após confirmação, sem duplicar nomes existentes.
+- **Cota genérica:** `consume_ai_quota(kind)` com limites mensais em `ai_quota_limits` (FREE): extração 10, refinamento 5, complemento 5, geração de ciclo 3. A função antiga `consume_extraction_quota` continua como wrapper.
+- **Limitações conhecidas:** sugestões de IA não são cacheadas (cada análise consome cota); `plan_cycle` já tem limite reservado, mas a feature só chega na Fase 3.
 
 Cada fase fecha com valor entregue; nada fica esperando a fase 4.
 
